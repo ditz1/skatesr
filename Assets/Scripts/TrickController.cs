@@ -11,14 +11,12 @@ public class TrickController : MonoBehaviour
     private Vector3 startEulerAngles;
     private Vector3 targetEulerAngles;
 
-
     float max_rotation = 35f;
 
     public Rigidbody board_rb;
 
     void Update()
     {
-        
         if (isPerformingTrick) {
             PerformTrick();
         } else {
@@ -55,12 +53,6 @@ public class TrickController : MonoBehaviour
             case 4:
                 VarialHeelflip();
                 break;
-            case 5:
-                Manual();
-                break;
-            case 6:
-                ManualBack();
-                break;
             default:
                 isPerformingTrick = false;
                 return;
@@ -68,8 +60,6 @@ public class TrickController : MonoBehaviour
         
         Debug.Log($"Start angles: {startEulerAngles}, Target angles: {targetEulerAngles}");
     }
-
-   
 
     void PerformTrick()
     {
@@ -106,26 +96,47 @@ public class TrickController : MonoBehaviour
         targetEulerAngles = startEulerAngles + new Vector3(0, 0, -360);
     }
 
-    void Manual() {
-        transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles.x + 3f, transform.rotation.eulerAngles.y, transform.rotation.eulerAngles.z);        
-    }
-
-    void ManualBack() {
-        transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles.x - 3f, transform.rotation.eulerAngles.y, transform.rotation.eulerAngles.z);
+    // Determines if board is closer to 0° (regular) or 180° (switch)
+    float GetNearestBaseYRotation()
+    {
+        float currentY = transform.rotation.eulerAngles.y;
+        
+        // Normalize to -180 to 180 range
+        if (currentY > 180f) currentY -= 360f;
+        
+        // Check which base angle (0 or 180/-180) is closer
+        float distanceTo0 = Mathf.Abs(Mathf.DeltaAngle(currentY, 0f));
+        float distanceTo180 = Mathf.Abs(Mathf.DeltaAngle(currentY, 180f));
+        
+        // Return the nearest base angle
+        return distanceTo0 < distanceTo180 ? 0f : 180f;
     }
 
     void HandleRotation()
     {
+        // Get the nearest base rotation (0° or 180°)
+        float baseRotation = GetNearestBaseYRotation();
+        float targetY;
+        
         if (board_rb.linearVelocity.x > 0.3f)
         {
-            transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles.x, max_rotation, transform.rotation.eulerAngles.z);
+            // Turning right
+            targetY = baseRotation + max_rotation;
         }
         else if (board_rb.linearVelocity.x < -0.3f)
         {
-            transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles.x, -max_rotation, transform.rotation.eulerAngles.z);
-
-        } else {
-            transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles.x, 0, transform.rotation.eulerAngles.z);
+            // Turning left
+            targetY = baseRotation - max_rotation;
         }
+        else
+        {
+            // Going straight - return to base rotation
+            targetY = baseRotation;
+        }
+        
+        // Smoothly rotate to target
+        Vector3 currentEuler = transform.rotation.eulerAngles;
+        Quaternion targetRotation = Quaternion.Euler(currentEuler.x, targetY, currentEuler.z);
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 10f);
     }
 }

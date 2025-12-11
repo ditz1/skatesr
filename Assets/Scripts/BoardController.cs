@@ -9,8 +9,8 @@ public class BoardController : MonoBehaviour
     private Rigidbody rb;
 
     // Jump variables
-    float minJumpForce = 5f;
-    float maxJumpForce = 15f;
+    float minJumpForce = 2f;
+    float maxJumpForce = 8f;
     float maxJumpHoldTime = 2f;
     float jumpHoldTime = 0f;
     bool isChargingJump = false;
@@ -33,12 +33,13 @@ public class BoardController : MonoBehaviour
     void Update()
     {
         PushForward();
-        
+
         if (!trickController.isPerformingTrick || !boardGroundDetect.isGrounded) {
             Move(moveInput);
         }
-        
+
         HandleJump();
+        HandleManualTilt(); // Add this new method
         HandleTrick();
 
         if (Keyboard.current.aKey.isPressed) {
@@ -48,24 +49,42 @@ public class BoardController : MonoBehaviour
         } else {
             moveInput = 0;
         }
+    }
 
+    void HandleManualTilt()
+    {
+        // Handle nose (space key)
+        if (Keyboard.current.wKey.isPressed) {
+            boardGroundDetect.RaiseNose();
+        } 
+        else if (Keyboard.current.wKey.wasReleasedThisFrame) {
+            boardGroundDetect.ResetNose();
+        }
+
+        // Handle tail (left shift key)
+        if (Keyboard.current.sKey.isPressed) {
+            boardGroundDetect.RaiseTail();
+        } 
+        else if (Keyboard.current.sKey.wasReleasedThisFrame) {
+            boardGroundDetect.ResetTail();
+        }
     }
 
     void HandleJump()
     {
         if (!boardGroundDetect.isGrounded) return;
         
-        if (Keyboard.current.wKey.wasPressedThisFrame) {
+        if (Keyboard.current.spaceKey.wasPressedThisFrame) {
             isChargingJump = true;
             jumpHoldTime = 0f;
         }
 
-        if (isChargingJump && Keyboard.current.wKey.isPressed) {
+        if (isChargingJump && Keyboard.current.spaceKey.isPressed) {
             jumpHoldTime += Time.deltaTime;
             jumpHoldTime = Mathf.Min(jumpHoldTime, maxJumpHoldTime);
         }
 
-        if (Keyboard.current.wKey.wasReleasedThisFrame && isChargingJump) {
+        if (Keyboard.current.spaceKey.wasReleasedThisFrame && isChargingJump) {
             Jump();
             isChargingJump = false;
         }
@@ -79,11 +98,6 @@ public class BoardController : MonoBehaviour
         // Only air tricks when not grounded
         if (trickController.isPerformingTrick) return;
         
-        if (Keyboard.current.leftShiftKey.isPressed){
-            trickController.StartTrick(5);
-        } else if (Keyboard.current.spaceKey.isPressed){
-            trickController.StartTrick(6);
-        }
 
         if (boardGroundDetect.isGrounded) return;
         if (Keyboard.current.jKey.isPressed) {

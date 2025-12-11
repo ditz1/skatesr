@@ -6,7 +6,7 @@ public class BoardGroundDetect : MonoBehaviour
     public Transform nose;
     public Transform tail;
     public TrickController trickController;
-    public BoardController boardController; // Add this reference
+    public BoardController boardController;
 
     [Header("Settings")]
     [Tooltip("Distance threshold to align with ground")]
@@ -17,14 +17,37 @@ public class BoardGroundDetect : MonoBehaviour
     
     [Tooltip("Layers to detect as ground")]
     LayerMask groundLayer = 1;
+
+    [Header("Manual Tilt Settings")]
+    [Tooltip("Maximum rotation angle for manual tilt (in degrees)")]
+    float maxTiltAngle = 15f;
+    
+    [Tooltip("Speed at which the board rotates to target angle")]
+    float tiltSpeed = 5f;
     
     [Header("Debug")]
     bool showDebugRays = true;
 
     public bool isGrounded = false;
 
+    float originalXRotation;
+    float targetXRotation;
+    
+    bool isNoseRaised = false;
+    bool isTailRaised = false;
+
+    void Start()
+    {
+        // Store the original X rotation
+        originalXRotation = transform.localEulerAngles.x;
+        targetXRotation = originalXRotation;
+    }
+
     void Update()
     {
+        // Handle manual tilting (should happen before ground alignment)
+        UpdateManualTilt();
+        
         RaycastHit noseHit;
         RaycastHit tailHit;
         
@@ -46,6 +69,13 @@ public class BoardGroundDetect : MonoBehaviour
         
         // CRITICAL: Don't override rotation during reset
         if (boardController != null && boardController.isResettingRotation)
+        {
+            isGrounded = noseHitGround && tailHitGround;
+            return;
+        }
+        
+        // Skip ground alignment if manually tilting
+        if (isNoseRaised || isTailRaised)
         {
             isGrounded = noseHitGround && tailHitGround;
             return;
@@ -81,6 +111,47 @@ public class BoardGroundDetect : MonoBehaviour
         {
             isGrounded = false;
         }
+    }
+
+    void UpdateManualTilt()
+    {
+        // Smoothly rotate to target X rotation
+        Vector3 currentRotation = transform.localEulerAngles;
+        float newXRotation = Mathf.LerpAngle(currentRotation.x, targetXRotation, Time.deltaTime * tiltSpeed);
+        
+        transform.localEulerAngles = new Vector3(newXRotation, currentRotation.y, currentRotation.z);
+    }
+
+    public void RaiseNose() 
+    {
+        isNoseRaised = true;
+        
+        // Rotate nose up (negative X rotation)
+        targetXRotation = originalXRotation - maxTiltAngle;
+    }
+
+    public void ResetNose()
+    {
+        isNoseRaised = false;
+        
+        // Return to original rotation
+        targetXRotation = originalXRotation;
+    }
+
+    public void RaiseTail() 
+    {
+        isTailRaised = true;
+        
+        // Rotate tail up (positive X rotation)
+        targetXRotation = originalXRotation + maxTiltAngle;
+    }
+
+    public void ResetTail()
+    {
+        isTailRaised = false;
+        
+        // Return to original rotation
+        targetXRotation = originalXRotation;
     }
 
     void OnDrawGizmos()
