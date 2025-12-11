@@ -37,6 +37,12 @@ public class BoardController : MonoBehaviour
         
         // Convert frames to seconds (assuming 60fps)
         comboBufferTime = comboBufferFrames / 60f;
+
+        // Make sure TrickController has reference to BoardGroundDetect
+        if (trickController != null && boardGroundDetect != null)
+        {
+            trickController.boardGroundDetect = boardGroundDetect;
+        }
     }
 
     void Update()
@@ -96,15 +102,17 @@ public class BoardController : MonoBehaviour
             boardGroundDetect.alignmentThreshold = 0.4f;
         }
 
-        // if (Keyboard.current.qKey.isPressed && !boardGroundDetect.isGrounded) { // boardslide
-        //     boardGroundDetect.TurnBoardFrontside();
-        // } else if (Keyboard.current.qKey.wasReleasedThisFrame) {
-        //     boardGroundDetect.ResetTurnBoardFrontside();
-        // } else if (Keyboard.current.eKey.isPressed && !boardGroundDetect.isGrounded) { // boardslide
-        //     boardGroundDetect.TurnBoardBackside();
-        // } else if (Keyboard.current.eKey.wasReleasedThisFrame) {
-        //     boardGroundDetect.ResetTurnBoardBackside();
-        // }
+        if ((Keyboard.current.qKey.isPressed && !boardGroundDetect.isManuallyTurning) && (!boardGroundDetect.isGrounded || in_grind)) { 
+            boardGroundDetect.TurnBoardFrontside();
+            boardGroundDetect.alignmentThreshold = 0.4f;
+        } else if (Keyboard.current.qKey.wasReleasedThisFrame) {
+            boardGroundDetect.ResetTurnBoardFrontside();
+        } else if ((Keyboard.current.eKey.isPressed && !boardGroundDetect.isManuallyTurning) && (!boardGroundDetect.isGrounded || in_grind)) { 
+            boardGroundDetect.TurnBoardBackside();
+            boardGroundDetect.alignmentThreshold = 0.4f;
+        } else if (Keyboard.current.eKey.wasReleasedThisFrame) {
+            boardGroundDetect.ResetTurnBoardBackside();
+        }
     }
 
 

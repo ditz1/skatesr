@@ -12,6 +12,7 @@ public class TrickController : MonoBehaviour
     private Vector3 startEulerAngles;
     private Vector3 targetEulerAngles;
     public bool isGrounded = false;
+    public BoardGroundDetect boardGroundDetect;
 
     float max_rotation = 35f;
 
@@ -22,7 +23,11 @@ public class TrickController : MonoBehaviour
         if (isPerformingTrick) {
             PerformTrick();
         } else {
-            HandleRotation();
+            // Only handle automatic rotation if not manually turning
+            if (boardGroundDetect != null && !boardGroundDetect.isManuallyTurning)
+            {
+                HandleRotation();
+            }
         }
     }
 

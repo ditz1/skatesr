@@ -29,6 +29,7 @@ public class BoardGroundDetect : MonoBehaviour
     bool showDebugRays = true;
 
     public bool isGrounded = false;
+    public bool isManuallyTurning = false;
 
     float originalXRotation;
     float targetXRotation;
@@ -50,7 +51,7 @@ public class BoardGroundDetect : MonoBehaviour
     void Update()
     {
         // Handle manual tilting (should happen before ground alignment)
-        UpdateManualTilt();
+        UpdateManualRotations();
         
         RaycastHit noseHit;
         RaycastHit tailHit;
@@ -82,62 +83,92 @@ public class BoardGroundDetect : MonoBehaviour
         if (noseHitGround || tailHitGround)
         {
             isGrounded = true;
-            
-            Vector3 groundNosePoint = noseHit.point;
-            Vector3 groundTailPoint = tailHit.point;
-            
-            Vector3 groundDirection = (groundNosePoint - groundTailPoint).normalized;
-            
-            Vector3 rightVector = Vector3.Cross(groundDirection, Vector3.up).normalized;
-            Vector3 upVector = Vector3.Cross(rightVector, groundDirection).normalized;
-            
-            Quaternion targetRotation = Quaternion.LookRotation(groundDirection, upVector);
-            
-            Vector3 currentEuler = transform.eulerAngles;
-            Vector3 targetEuler = targetRotation.eulerAngles;
-            targetRotation = Quaternion.Euler(targetEuler.x, currentEuler.y, targetEuler.z);
-            
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * rotationSpeed);
-            
-            if (showDebugRays)
+        
+            // When landing normally (not grinding), reset the manual turning state
+            if (isManuallyTurning && !boardController.in_grind)
             {
-                Debug.DrawRay(transform.position, groundDirection * 2f, Color.blue);
-                Debug.DrawRay(transform.position, upVector * 2f, Color.cyan);
+                isManuallyTurning = false;
             }
-        }
-        else
-        {
+        
+            // Don't apply ground rotation if manually turning (includes grinding)
+            if (!isManuallyTurning)
+            {
+                Vector3 groundNosePoint = noseHit.point;
+                Vector3 groundTailPoint = tailHit.point;
+        
+                Vector3 groundDirection = (groundNosePoint - groundTailPoint).normalized;
+        
+                Vector3 rightVector = Vector3.Cross(groundDirection, Vector3.up).normalized;
+                Vector3 upVector = Vector3.Cross(rightVector, groundDirection).normalized;
+        
+                Quaternion targetRotation = Quaternion.LookRotation(groundDirection, upVector);
+        
+                Vector3 currentEuler = transform.eulerAngles;
+                Vector3 targetEuler = targetRotation.eulerAngles;
+                targetRotation = Quaternion.Euler(targetEuler.x, currentEuler.y, targetEuler.z);
+        
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * rotationSpeed);
+        
+                // Update originalYRotation to match where we landed
+                originalYRotation = transform.localEulerAngles.y;
+                targetYRotation = originalYRotation;
+        
+                if (showDebugRays)
+                {
+                    Debug.DrawRay(transform.position, groundDirection * 2f, Color.blue);
+                    Debug.DrawRay(transform.position, upVector * 2f, Color.cyan);
+                }
+            }
+        } else {
             isGrounded = false;
         }
+
     }
 
-    void UpdateManualTilt()
+    void UpdateManualRotations()
     {
-        // Smoothly rotate to target X rotation
         Vector3 currentRotation = transform.localEulerAngles;
+        
+        // Update X rotation (nose/tail)
         float newXRotation = Mathf.LerpAngle(currentRotation.x, targetXRotation, Time.deltaTime * tiltSpeed);
-
-        transform.localEulerAngles = new Vector3(newXRotation, currentRotation.y, currentRotation.z);
+        
+        // Update Y rotation (frontside/backside) - only if manually turning
+        float newYRotation = currentRotation.y;
+        if (isManuallyTurning)
+        {
+            newYRotation = Mathf.LerpAngle(currentRotation.y, targetYRotation, Time.deltaTime * tiltSpeed);
+        }
+        
+        // Set both at once - no fighting!
+        transform.localEulerAngles = new Vector3(newXRotation, newYRotation, currentRotation.z);
     }
 
     public void TurnBoardFrontside()
     {
-        targetYRotation = originalYRotation + 180f;
+        isManuallyTurning = true;
+        // Clockwise rotation = decrease Y rotation
+        targetYRotation -= 60f;
     }
 
     public void ResetTurnBoardFrontside()
     {
-        targetYRotation = originalYRotation;
+        isManuallyTurning = false;
+        // Keep current rotation as target when released
+        targetYRotation = transform.localEulerAngles.y;
     }
 
     public void TurnBoardBackside()
     {
-        targetYRotation = originalYRotation - 180f;
+        isManuallyTurning = true;
+        // Counter-clockwise rotation = increase Y rotation
+        targetYRotation += 60f;
     }
 
     public void ResetTurnBoardBackside()
     {
-        targetYRotation = originalYRotation;
+        isManuallyTurning = false;
+        // Keep current rotation as target when released
+        targetYRotation = transform.localEulerAngles.y;
     }
 
     public void RaiseNose() 

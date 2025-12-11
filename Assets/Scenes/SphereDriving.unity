@@ -296,11 +296,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineFollow
   TrackerSettings:
     BindingMode: 4
-    PositionDamping: {x: 1, y: 1, z: 1}
+    PositionDamping: {x: 1, y: 3, z: 1}
     AngularDampingMode: 0
     RotationDamping: {x: 1, y: 1, z: 1}
     QuaternionDamping: 1
-  FollowOffset: {x: 0.7, y: 1.2, z: -3}
+  FollowOffset: {x: 1, y: 1.5, z: -2}
 --- !u!114 &509345745
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -353,7 +353,7 @@ Transform:
   m_GameObject: {fileID: 509345742}
   serializedVersion: 2
   m_LocalRotation: {x: -0.00000007217463, y: -0.000000039719808, z: 0.000000016514138, w: 1}
-  m_LocalPosition: {x: 0.7, y: 1.2, z: -3}
+  m_LocalPosition: {x: 1, y: 1.5, z: -2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -610,9 +610,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BoardController
   boardGroundDetect: {fileID: 1610310281}
   trickController: {fileID: 1610310282}
-  playerController: {fileID: 0}
+  playerController: {fileID: 1565172404}
   in_grind: 0
   isResettingRotation: 0
+  comboBufferFrames: 8
 --- !u!1 &876184023
 GameObject:
   m_ObjectHideFlags: 0
@@ -767,7 +768,7 @@ Transform:
   m_GameObject: {fileID: 1381861250}
   serializedVersion: 2
   m_LocalRotation: {x: -0.00000007217463, y: -0.000000039719808, z: -2.8667625e-15, w: 1}
-  m_LocalPosition: {x: 0.7, y: 1.2, z: -3}
+  m_LocalPosition: {x: 1, y: 1.5, z: -2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1078,9 +1079,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BoardGroundDetect
   nose: {fileID: 876184024}
   tail: {fileID: 307200805}
-  trickController: {fileID: 0}
-  boardController: {fileID: 0}
+  trickController: {fileID: 1610310282}
+  boardController: {fileID: 728332828}
+  alignmentThreshold: 0.5
   isGrounded: 0
+  isManuallyTurning: 0
 --- !u!114 &1610310282
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1094,6 +1097,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrickController
   isPerformingTrick: 0
+  isGrounded: 0
+  boardGroundDetect: {fileID: 1610310281}
   board_rb: {fileID: 728332827}
 --- !u!1 &1771928390 stripped
 GameObject:
