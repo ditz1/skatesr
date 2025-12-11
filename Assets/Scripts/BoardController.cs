@@ -7,34 +7,39 @@ public class BoardController : MonoBehaviour
     float turnSpeed = 4f;
     int moveInput = 0;
     private Rigidbody rb;
-    float timer = 0f; // timer to track if we have to increase movespeed
 
     // Jump variables
-    float minJumpForce = 5f;      // Force for a quick tap
-    float maxJumpForce = 15f;     // Force for holding 2+ seconds
-    float maxJumpHoldTime = 2f;   // Maximum hold time for max force
-    float jumpHoldTime = 0f;      // Tracks how long W is held
-    bool isChargingJump = false;  // Tracks if we're charging a jump
+    float minJumpForce = 5f;
+    float maxJumpForce = 15f;
+    float maxJumpHoldTime = 2f;
+    float jumpHoldTime = 0f;
+    bool isChargingJump = false;
+
     public BoardGroundDetect boardGroundDetect;
+    public TrickController trickController;
+    public PlayerController playerController;
+
     public bool got_hit = false;
-    Transform hit_transform;
-
-
+    
+    public bool isResettingRotation = false;
+    
 
     void Start()
     {
         rb = GetComponent<Rigidbody>();
-        // Make sure gravity is enabled on the Rigidbody
         rb.useGravity = true;
     }
 
     void Update()
     {
-        if (got_hit) {
-            return;
-        }
         PushForward();
+        
+        if (!trickController.isPerformingTrick || !boardGroundDetect.isGrounded) {
+            Move(moveInput);
+        }
+        
         HandleJump();
+        HandleTrick();
 
         if (Keyboard.current.aKey.isPressed) {
             moveInput = -1;
@@ -43,57 +48,73 @@ public class BoardController : MonoBehaviour
         } else {
             moveInput = 0;
         }
-        
-        Move(moveInput);
-        
-        timer += Time.deltaTime;
-        if (timer > 3f) {
-            moveSpeed *= 1.1f;
-            timer = 0f;
-        }
+
     }
 
     void HandleJump()
     {
         if (!boardGroundDetect.isGrounded) return;
-        // Start charging when W is first pressed
+        
         if (Keyboard.current.wKey.wasPressedThisFrame) {
             isChargingJump = true;
             jumpHoldTime = 0f;
         }
 
-        // Increment hold time while W is held (capped at maxJumpHoldTime)
         if (isChargingJump && Keyboard.current.wKey.isPressed) {
             jumpHoldTime += Time.deltaTime;
             jumpHoldTime = Mathf.Min(jumpHoldTime, maxJumpHoldTime);
         }
 
-        // Apply jump force when W is released
         if (Keyboard.current.wKey.wasReleasedThisFrame && isChargingJump) {
             Jump();
             isChargingJump = false;
         }
     }
 
-    void Jump()
+   
+
+
+    void HandleTrick()
     {
-        // Calculate force based on how long the key was held
-        float normalizedHoldTime = jumpHoldTime / maxJumpHoldTime; // 0 to 1
-        float jumpForce = Mathf.Lerp(minJumpForce, maxJumpForce, normalizedHoldTime);
+        // Only air tricks when not grounded
+        if (trickController.isPerformingTrick) return;
         
-        // Apply upward force
-        rb.linearVelocity = new Vector3(rb.linearVelocity.x, rb.linearVelocity.y + (jumpForce * 0.5f), rb.linearVelocity.z);
-        Debug.Log("linear velocity: " + rb.linearVelocity);
+        if (Keyboard.current.leftShiftKey.isPressed){
+            trickController.StartTrick(5);
+        } else if (Keyboard.current.spaceKey.isPressed){
+            trickController.StartTrick(6);
+        }
+
+        if (boardGroundDetect.isGrounded) return;
+        if (Keyboard.current.jKey.isPressed) {
+            trickController.StartTrick(0);
+        } else if (Keyboard.current.kKey.isPressed) {
+            trickController.StartTrick(1);
+        } else if (Keyboard.current.lKey.isPressed) {
+            trickController.StartTrick(2);
+        } else if (Keyboard.current.uKey.isPressed) {
+            trickController.StartTrick(3);
+        } else if (Keyboard.current.iKey.isPressed) {
+            trickController.StartTrick(4);
+        }
     }
 
-    // this is so that the sphere will always continue to move forward
+    void Jump()
+    {
+        float normalizedHoldTime = jumpHoldTime / maxJumpHoldTime;
+        float jumpForce = Mathf.Lerp(minJumpForce, maxJumpForce, normalizedHoldTime);
+        
+        rb.linearVelocity = new Vector3(rb.linearVelocity.x, jumpForce, rb.linearVelocity.z);
+        Debug.Log("Jump force: " + jumpForce);
+    }
+
     void PushForward() {
-        // Only set X and Z velocity, preserve Y for jumping and gravity
         rb.linearVelocity = new Vector3(rb.linearVelocity.x, rb.linearVelocity.y, moveSpeed);
     }
 
     void Move(int input){
-        // Only set X and Z velocity, preserve Y for jumping and gravity
         rb.linearVelocity = new Vector3(input * turnSpeed, rb.linearVelocity.y, moveSpeed);
     }
+
+    
 }

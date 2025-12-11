@@ -5,6 +5,8 @@ public class BoardGroundDetect : MonoBehaviour
     [Header("References")]
     public Transform nose;
     public Transform tail;
+    public TrickController trickController;
+    public BoardController boardController; // Add this reference
 
     [Header("Settings")]
     [Tooltip("Distance threshold to align with ground")]
@@ -26,45 +28,49 @@ public class BoardGroundDetect : MonoBehaviour
         RaycastHit noseHit;
         RaycastHit tailHit;
         
-        // Cast rays straight down
         bool noseHitGround = Physics.Raycast(nose.position, Vector3.down, out noseHit, alignmentThreshold, groundLayer);
         bool tailHitGround = Physics.Raycast(tail.position, Vector3.down, out tailHit, alignmentThreshold, groundLayer);
         
-        // Debug rays
         if (showDebugRays)
         {
             Debug.DrawRay(nose.position, Vector3.down * alignmentThreshold, noseHitGround ? Color.green : Color.red);
             Debug.DrawRay(tail.position, Vector3.down * alignmentThreshold, tailHitGround ? Color.green : Color.red);
         }
         
-        // Only align if both rays hit ground within threshold
+        // CRITICAL: Don't rotate if performing a trick OR resetting
+        if (trickController != null && trickController.isPerformingTrick)
+        {
+            isGrounded = false;
+            return;
+        }
+        
+        // CRITICAL: Don't override rotation during reset
+        if (boardController != null && boardController.isResettingRotation)
+        {
+            isGrounded = noseHitGround && tailHitGround;
+            return;
+        }
+        
         if (noseHitGround && tailHitGround)
         {
             isGrounded = true;
-            // Get the ground contact points
+            
             Vector3 groundNosePoint = noseHit.point;
             Vector3 groundTailPoint = tailHit.point;
             
-            // Calculate the direction from tail to nose along the ground surface
             Vector3 groundDirection = (groundNosePoint - groundTailPoint).normalized;
             
-            // Calculate the up vector perpendicular to the ground slope
-            // Use the cross product of ground direction and world right to get proper up vector
             Vector3 rightVector = Vector3.Cross(groundDirection, Vector3.up).normalized;
             Vector3 upVector = Vector3.Cross(rightVector, groundDirection).normalized;
             
-            // Create target rotation: board forward = ground direction, board up = perpendicular to slope
             Quaternion targetRotation = Quaternion.LookRotation(groundDirection, upVector);
             
-            // Preserve the Y rotation (yaw) from current rotation to maintain steering
             Vector3 currentEuler = transform.eulerAngles;
             Vector3 targetEuler = targetRotation.eulerAngles;
             targetRotation = Quaternion.Euler(targetEuler.x, currentEuler.y, targetEuler.z);
             
-            // Smoothly rotate to match ground
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * rotationSpeed);
             
-            // Debug: show the target direction
             if (showDebugRays)
             {
                 Debug.DrawRay(transform.position, groundDirection * 2f, Color.blue);
