@@ -611,7 +611,7 @@ MonoBehaviour:
   boardGroundDetect: {fileID: 1610310281}
   trickController: {fileID: 1610310282}
   playerController: {fileID: 0}
-  got_hit: 0
+  in_grind: 0
   isResettingRotation: 0
 --- !u!1 &876184023
 GameObject:
@@ -1144,7 +1144,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 84820ec3a79aed24db344dfa48357c6f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ParkManager
-  parkPrefab: {fileID: 8865052901241567397, guid: f079bd9238fcd0843b26e2e513ba7d5f, type: 3}
+  parkPrefabs:
+  - {fileID: 8865052901241567397, guid: f079bd9238fcd0843b26e2e513ba7d5f, type: 3}
+  - {fileID: 8865052901241567397, guid: eebe4500da22f8e4c96e46aa282d5ea9, type: 3}
   skaterTransform: {fileID: 728332826}
   initialPark: {fileID: 1771928390}
   maxParkRenders: 4

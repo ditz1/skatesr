@@ -3,16 +3,24 @@ using UnityEngine;
 
 public class ParkManager : MonoBehaviour
 {
-    public GameObject parkPrefab;
+    public GameObject[] parkPrefabs; // Changed to array
     public Transform skaterTransform;
     public GameObject initialPark; // Assign the park already in the scene
     public int maxParkRenders = 4;
     public float despawnDistance = 50f;
 
     private Queue<GameObject> activeParkQueue = new Queue<GameObject>();
+    private int currentPrefabIndex = 0; // Track which prefab to spawn next
 
     void Start()
     {
+        // Validate we have prefabs
+        if (parkPrefabs == null || parkPrefabs.Length == 0)
+        {
+            Debug.LogError("No park prefabs assigned to ParkManager!");
+            return;
+        }
+
         // If there's an initial park, add it to the queue first
         if (initialPark != null)
         {
@@ -61,12 +69,18 @@ public class ParkManager : MonoBehaviour
 
     void ExtendPark()
     {
+        // Get the next prefab in rotation
+        GameObject prefabToSpawn = parkPrefabs[currentPrefabIndex];
+        
+        // Increment and wrap around
+        currentPrefabIndex = (currentPrefabIndex + 1) % parkPrefabs.Length;
+
         GameObject newPark;
         
         if (activeParkQueue.Count == 0)
         {
             // First park spawns at the manager's position
-            newPark = Instantiate(parkPrefab, transform.position, Quaternion.identity);
+            newPark = Instantiate(prefabToSpawn, transform.position, Quaternion.identity);
         }
         else
         {
@@ -77,7 +91,7 @@ public class ParkManager : MonoBehaviour
             if (connectionPoint != null)
             {
                 // Spawn new park at the connection point
-                newPark = Instantiate(parkPrefab, connectionPoint.position, connectionPoint.rotation);
+                newPark = Instantiate(prefabToSpawn, connectionPoint.position, connectionPoint.rotation);
             }
             else
             {

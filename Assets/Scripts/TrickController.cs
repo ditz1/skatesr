@@ -7,9 +7,11 @@ public class TrickController : MonoBehaviour
     private int currentTrick = -1;
     private float trickProgress = 0f;
     private float trickDuration = 0.5f;
+    private float trickStartTime = 0f;
     
     private Vector3 startEulerAngles;
     private Vector3 targetEulerAngles;
+    public bool isGrounded = false;
 
     float max_rotation = 35f;
 
@@ -35,8 +37,41 @@ public class TrickController : MonoBehaviour
         currentTrick = trickType;
         isPerformingTrick = true;
         trickProgress = 0f;
+        trickStartTime = Time.time;
         startEulerAngles = transform.rotation.eulerAngles;
         
+        SetTrickRotation(trickType);
+        
+        Debug.Log($"Start angles: {startEulerAngles}, Target angles: {targetEulerAngles}");
+    }
+
+    public void UpgradeToCombo(int comboTrickType)
+    {
+        Debug.Log($"Upgrading trick {currentTrick} to combo trick {comboTrickType}");
+        
+        // Reset the trick with new target
+        currentTrick = comboTrickType;
+        trickProgress = 0f;
+        trickStartTime = Time.time;
+        startEulerAngles = transform.rotation.eulerAngles;
+        
+        SetTrickRotation(comboTrickType);
+        
+        Debug.Log($"Combo - Start angles: {startEulerAngles}, Target angles: {targetEulerAngles}");
+    }
+
+    public bool IsInComboWindow(float comboWindowTime)
+    {
+        return Time.time - trickStartTime <= comboWindowTime;
+    }
+
+    public int GetCurrentTrick()
+    {
+        return currentTrick;
+    }
+
+    void SetTrickRotation(int trickType)
+    {
         switch (trickType) {
             case 0:
                 Kickflip();
@@ -57,8 +92,6 @@ public class TrickController : MonoBehaviour
                 isPerformingTrick = false;
                 return;
         }
-        
-        Debug.Log($"Start angles: {startEulerAngles}, Target angles: {targetEulerAngles}");
     }
 
     void PerformTrick()
@@ -81,6 +114,7 @@ public class TrickController : MonoBehaviour
     }
 
     void Shuvit() {
+        // instead of always turning 180 degrees, to account for boardslide should
         targetEulerAngles = startEulerAngles + new Vector3(0, 180, 0);
     }
 

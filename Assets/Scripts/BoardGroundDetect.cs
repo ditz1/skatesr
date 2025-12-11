@@ -10,7 +10,7 @@ public class BoardGroundDetect : MonoBehaviour
 
     [Header("Settings")]
     [Tooltip("Distance threshold to align with ground")]
-    float alignmentThreshold = 0.5f;
+    public float alignmentThreshold = 0.4f;
     
     [Tooltip("How fast the board rotates to match ground")]
     float rotationSpeed = 10f;
@@ -20,7 +20,7 @@ public class BoardGroundDetect : MonoBehaviour
 
     [Header("Manual Tilt Settings")]
     [Tooltip("Maximum rotation angle for manual tilt (in degrees)")]
-    float maxTiltAngle = 15f;
+    float maxTiltAngle = 45f;
     
     [Tooltip("Speed at which the board rotates to target angle")]
     float tiltSpeed = 5f;
@@ -32,6 +32,8 @@ public class BoardGroundDetect : MonoBehaviour
 
     float originalXRotation;
     float targetXRotation;
+    float originalYRotation;
+    float targetYRotation;
     
     bool isNoseRaised = false;
     bool isTailRaised = false;
@@ -41,6 +43,8 @@ public class BoardGroundDetect : MonoBehaviour
         // Store the original X rotation
         originalXRotation = transform.localEulerAngles.x;
         targetXRotation = originalXRotation;
+        originalYRotation = transform.localEulerAngles.y;
+        targetYRotation = originalYRotation;
     }
 
     void Update()
@@ -74,14 +78,8 @@ public class BoardGroundDetect : MonoBehaviour
             return;
         }
         
-        // Skip ground alignment if manually tilting
-        if (isNoseRaised || isTailRaised)
-        {
-            isGrounded = noseHitGround && tailHitGround;
-            return;
-        }
         
-        if (noseHitGround && tailHitGround)
+        if (noseHitGround || tailHitGround)
         {
             isGrounded = true;
             
@@ -118,8 +116,28 @@ public class BoardGroundDetect : MonoBehaviour
         // Smoothly rotate to target X rotation
         Vector3 currentRotation = transform.localEulerAngles;
         float newXRotation = Mathf.LerpAngle(currentRotation.x, targetXRotation, Time.deltaTime * tiltSpeed);
-        
+
         transform.localEulerAngles = new Vector3(newXRotation, currentRotation.y, currentRotation.z);
+    }
+
+    public void TurnBoardFrontside()
+    {
+        targetYRotation = originalYRotation + 180f;
+    }
+
+    public void ResetTurnBoardFrontside()
+    {
+        targetYRotation = originalYRotation;
+    }
+
+    public void TurnBoardBackside()
+    {
+        targetYRotation = originalYRotation - 180f;
+    }
+
+    public void ResetTurnBoardBackside()
+    {
+        targetYRotation = originalYRotation;
     }
 
     public void RaiseNose() 
