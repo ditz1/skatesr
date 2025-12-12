@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7288635734335406643}
   m_Layer: 0
-  m_Name: z_rail
+  m_Name: rainbow_rail
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

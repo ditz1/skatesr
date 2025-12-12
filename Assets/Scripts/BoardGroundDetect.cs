@@ -52,6 +52,11 @@ public class BoardGroundDetect : MonoBehaviour
     void Update()
     {
         // Handle manual tilting (should happen before ground alignment)
+        if (isGrounded) {
+            Debug.Log("Grounded");
+        } else {
+            Debug.Log("Not grounded");
+        }
         UpdateManualRotations();
         
         RaycastHit noseHit;
@@ -66,12 +71,12 @@ public class BoardGroundDetect : MonoBehaviour
             Debug.DrawRay(tail.position, Vector3.down * alignmentThreshold, tailHitGround ? Color.green : Color.red);
         }
         
-        // CRITICAL: Don't rotate if performing a trick OR resetting
-        if (trickController != null && trickController.isPerformingTrick)
-        {
-            isGrounded = false;
-            return;
-        }
+        // // CRITICAL: Don't rotate if performing a trick OR resetting
+        // if (trickController != null && trickController.isPerformingTrick)
+        // {
+        //     isGrounded = false;
+        //     return;
+        // }
         
         // CRITICAL: Don't override rotation during reset
         if (boardController != null && boardController.isResettingRotation)
@@ -84,6 +89,7 @@ public class BoardGroundDetect : MonoBehaviour
         if (noseHitGround || tailHitGround)
         {
             isGrounded = true;
+            trickController.isGrounded = true;
         
             // When landing normally (not grinding), reset the manual turning state
             if (isManuallyTurning && !boardController.in_grind)

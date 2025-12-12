@@ -21,6 +21,12 @@ public class TrickController : MonoBehaviour
     void Update()
     {
         if (isPerformingTrick) {
+            // Cancel trick if we land while performing it
+            if (isGrounded)
+            {
+                CancelTrick();
+                return;
+            }
             PerformTrick();
         } else {
             // Only handle automatic rotation if not manually turning
@@ -112,6 +118,23 @@ public class TrickController : MonoBehaviour
             Vector3 currentEulerAngles = Vector3.Lerp(startEulerAngles, targetEulerAngles, trickProgress);
             transform.rotation = Quaternion.Euler(currentEulerAngles);
         }
+    }
+
+    void CancelTrick()
+    {
+        Debug.Log("Trick cancelled - landed!");
+        isPerformingTrick = false;
+        currentTrick = -1;
+        trickProgress = 0f;
+
+        // Reset rotation to nearest clean angle (0, 90, 180, 270)
+        Vector3 currentEuler = transform.rotation.eulerAngles;
+
+        // Snap to nearest 90-degree increment for Y rotation
+        float nearestY = Mathf.Round(currentEuler.y / 90f) * 90f;
+
+        // Keep X and Z as they are (ground detection will handle X)
+        transform.rotation = Quaternion.Euler(currentEuler.x, nearestY, currentEuler.z);
     }
 
     void Kickflip() {
