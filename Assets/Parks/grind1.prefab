@@ -35,6 +35,7 @@ Transform:
   m_Children:
   - {fileID: 5350103953540318825}
   - {fileID: 2609850356811925945}
+  - {fileID: 1399199109691740243}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &7450648118783998064
@@ -101,7 +102,7 @@ BoxCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 265465890794680335}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: b098dcbed32ba02419ce63ca6e957276, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -127,10 +128,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91898518154a9aa4fb1f901ac24dc5c9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GrindDetect
-  grind_height: {fileID: 5350103953540318825}
-  start_grind: {fileID: 5350103953540318825}
-  end_grind: {fileID: 2609850356811925945}
-  grindSnapDistance: 1.5
+  grind_start: {fileID: 5350103953540318825}
+  grindPoints:
+  - {fileID: 5350103953540318825}
+  - {fileID: 2609850356811925945}
+  - {fileID: 1399199109691740243}
 --- !u!1 &6611436010498016305
 GameObject:
   m_ObjectHideFlags: 0
@@ -141,7 +143,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2609850356811925945}
   m_Layer: 0
-  m_Name: end_grind
+  m_Name: grindpoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -156,7 +158,7 @@ Transform:
   m_GameObject: {fileID: 6611436010498016305}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.5, z: 0.5}
+  m_LocalPosition: {x: 0, y: 0.5, z: 0.013}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -188,6 +190,37 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0.5, z: -0.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4183894495207765105}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &7305591363027857784
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1399199109691740243}
+  m_Layer: 0
+  m_Name: grindpoint (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1399199109691740243
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7305591363027857784}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.5, z: 0.4905}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

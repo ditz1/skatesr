@@ -1,13 +1,16 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class GrindDetect : MonoBehaviour
 {
-    public Transform grind_height;
-    public Transform start_grind;
-    public Transform end_grind;
+    public Transform grind_start;
+    
+    [Header("Grind Path")]
+    [Tooltip("List of points that define the grind path (in order)")]
+    public List<Transform> grindPoints = new List<Transform>();
     
     [Tooltip("How close to the rail the player needs to be to start grinding")]
-    public float grindSnapDistance = 0.5f;
+    float grindSnapDistance = 2.5f;
     
     BoardController boardController;
 
@@ -25,8 +28,15 @@ public class GrindDetect : MonoBehaviour
                 return;
             }
             
+            // Check if we have valid grind points
+            if (grindPoints == null || grindPoints.Count < 2)
+            {
+                Debug.LogWarning("Need at least 2 grind points!");
+                return;
+            }
+            
             // Check if player is above minimum grind height
-            if (collision.gameObject.transform.position.y > grind_height.position.y) 
+            if (collision.gameObject.transform.position.y > grind_start.position.y) 
             {
                 // Check if player is close enough to the grind rail
                 Vector3 closestPoint = GetClosestPointOnGrindRail(collision.gameObject.transform.position);
@@ -34,7 +44,7 @@ public class GrindDetect : MonoBehaviour
                 
                 if (distanceToRail < grindSnapDistance)
                 {
-                    boardController.StartGrind(start_grind, end_grind);
+                    boardController.StartGrind(grindPoints);
                 }
             }
         }
@@ -46,7 +56,6 @@ public class GrindDetect : MonoBehaviour
         if (boardController != null)
         {
             // IMPORTANT: Only end grind if they're actually grinding
-            // This prevents interfering with jump-initiated exits
             if (boardController.in_grind)
             {
                 Debug.Log("Collision exit - ending grind");
@@ -55,39 +64,71 @@ public class GrindDetect : MonoBehaviour
         }
     }
     
-    // Helper function to find closest point on the grind rail
+    // Helper function to find closest point on the entire grind rail path
     Vector3 GetClosestPointOnGrindRail(Vector3 position)
     {
-        if (start_grind == null || end_grind == null) return position;
+        if (grindPoints == null || grindPoints.Count < 2) return position;
         
-        Vector3 startPos = start_grind.position;
-        Vector3 endPos = end_grind.position;
-        Vector3 railDirection = endPos - startPos;
-        float railLength = railDirection.magnitude;
-        railDirection.Normalize();
+        Vector3 closestPoint = grindPoints[0].position;
+        float closestDistance = float.MaxValue;
         
-        Vector3 startToPosition = position - startPos;
-        float projectionLength = Vector3.Dot(startToPosition, railDirection);
-        projectionLength = Mathf.Clamp(projectionLength, 0, railLength);
-        
-        return startPos + railDirection * projectionLength;
-    }
-
-    // Optional: Draw the grind rail in the editor
-    void OnDrawGizmos()
-    {
-        if (start_grind != null && end_grind != null)
+        // Check each segment
+        for (int i = 0; i < grindPoints.Count - 1; i++)
         {
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawLine(start_grind.position, end_grind.position);
-            Gizmos.DrawWireSphere(start_grind.position, 0.2f);
-            Gizmos.DrawWireSphere(end_grind.position, 0.2f);
+            Vector3 segmentStart = grindPoints[i].position;
+            Vector3 segmentEnd = grindPoints[i + 1].position;
+            Vector3 segmentDirection = segmentEnd - segmentStart;
+            float segmentLength = segmentDirection.magnitude;
+            segmentDirection.Normalize();
+            
+            Vector3 startToPosition = position - segmentStart;
+            float projectionLength = Vector3.Dot(startToPosition, segmentDirection);
+            projectionLength = Mathf.Clamp(projectionLength, 0, segmentLength);
+            
+            Vector3 pointOnSegment = segmentStart + segmentDirection * projectionLength;
+            float distance = Vector3.Distance(position, pointOnSegment);
+            
+            if (distance < closestDistance)
+            {
+                closestDistance = distance;
+                closestPoint = pointOnSegment;
+            }
         }
         
-        if (grind_height != null)
+        return closestPoint;
+    }
+
+    // Draw the grind path in the editor
+    void OnDrawGizmos()
+    {
+        if (grindPoints != null && grindPoints.Count >= 2)
+        {
+            Gizmos.color = Color.yellow;
+            
+            // Draw lines between points
+            for (int i = 0; i < grindPoints.Count - 1; i++)
+            {
+                if (grindPoints[i] != null && grindPoints[i + 1] != null)
+                {
+                    Gizmos.DrawLine(grindPoints[i].position, grindPoints[i + 1].position);
+                }
+            }
+            
+            // Draw spheres at each point
+            for (int i = 0; i < grindPoints.Count; i++)
+            {
+                if (grindPoints[i] != null)
+                {
+                    Gizmos.color = i == 0 ? Color.green : (i == grindPoints.Count - 1 ? Color.red : Color.yellow);
+                    Gizmos.DrawWireSphere(grindPoints[i].position, 0.2f);
+                }
+            }
+        }
+        
+        if (grind_start != null)
         {
             Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(grind_height.position, 0.3f);
+            Gizmos.DrawWireSphere(grind_start.position, 0.3f);
         }
     }
 }

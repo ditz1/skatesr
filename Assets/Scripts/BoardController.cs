@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using System.Collections.Generic;
 
 public class BoardController : MonoBehaviour
 {
@@ -24,13 +25,13 @@ public class BoardController : MonoBehaviour
     public bool isResettingRotation = false;
 
     // Grind variables
-    private Transform grindStart;
-    private Transform grindEnd;
+    private List<Transform> grindPoints;
+    private int currentGrindSegment = 0;
     private float grindSpeed = 5f;
     private float grindAlignSpeed = 10f;
     private float grindProgress = 0f;
     private float grindCooldown = 0f; 
-    private float grindCooldownDuration = 0.25f;
+    private float grindCooldownDuration = 0.10f;
 
     // Combo input buffer
     [Header("Trick Input Settings")]
@@ -95,7 +96,7 @@ public class BoardController : MonoBehaviour
 
     void HandleGrind()
     {
-        if (in_grind && grindStart != null && grindEnd != null)
+        if (in_grind && grindPoints != null && grindPoints.Count >= 2)
         {
             // Completely freeze the rigidbody - we'll handle all movement manually
             rb.constraints = RigidbodyConstraints.FreezeAll;
@@ -109,23 +110,41 @@ public class BoardController : MonoBehaviour
 
     void FollowGrindRail()
     {
-        Vector3 startPos = grindStart.position;
-        Vector3 endPos = grindEnd.position;
-        Vector3 railDirection = (endPos - startPos).normalized;
-        float railTotalLength = Vector3.Distance(startPos, endPos);
-
-        // Check if we've reached the end
-        if (grindProgress >= railTotalLength)
+        if (grindPoints == null || grindPoints.Count < 2 || currentGrindSegment >= grindPoints.Count - 1)
         {
             EndGrind();
             return;
         }
 
-        // Simply increment progress - no recalculation from position
-        grindProgress += grindSpeed * Time.deltaTime;
+        Vector3 startPos = grindPoints[currentGrindSegment].position;
+        Vector3 endPos = grindPoints[currentGrindSegment + 1].position;
+        Vector3 railDirection = (endPos - startPos).normalized;
+        float segmentLength = Vector3.Distance(startPos, endPos);
 
-        // Clamp to rail length
-        grindProgress = Mathf.Clamp(grindProgress, 0, railTotalLength);
+        // Check if we've reached the end of this segment
+        if (grindProgress >= segmentLength)
+        {
+            // Move to next segment
+            currentGrindSegment++;
+            grindProgress = 0f;
+
+            // Check if we've completed the entire rail
+            if (currentGrindSegment >= grindPoints.Count - 1)
+            {
+                EndGrind();
+                return;
+            }
+
+            // Update for next segment
+            startPos = grindPoints[currentGrindSegment].position;
+            endPos = grindPoints[currentGrindSegment + 1].position;
+            railDirection = (endPos - startPos).normalized;
+            segmentLength = Vector3.Distance(startPos, endPos);
+        }
+
+        // Move along current segment
+        grindProgress += grindSpeed * Time.deltaTime;
+        grindProgress = Mathf.Clamp(grindProgress, 0, segmentLength);
 
         // Calculate position on the rail based on progress
         Vector3 newPosition = startPos + (railDirection * grindProgress);
@@ -138,7 +157,7 @@ public class BoardController : MonoBehaviour
         transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, grindAlignSpeed * Time.deltaTime);
     }
 
-    public void StartGrind(Transform startPoint, Transform endPoint)
+    public void StartGrind(List<Transform> points)
     {
         // Don't start grinding if we're in cooldown
         if (grindCooldown > 0)
@@ -146,26 +165,33 @@ public class BoardController : MonoBehaviour
             return;
         }
 
-        in_grind = true;
-        grindStart = startPoint;
-        grindEnd = endPoint;
+        if (points == null || points.Count < 2)
+        {
+            Debug.LogWarning("Need at least 2 grind points to start grinding!");
+            return;
+        }
 
-        // Calculate initial progress along the rail based on current position
-        Vector3 startPos = startPoint.position;
-        Vector3 endPos = endPoint.position;
+        in_grind = true;
+        grindPoints = points;
+        currentGrindSegment = 0;
+
+        // Calculate initial progress along the first segment based on current position
+        Vector3 startPos = points[0].position;
+        Vector3 endPos = points[1].position;
         Vector3 railDirection = (endPos - startPos).normalized;
 
         Vector3 startToPlayer = transform.position - startPos;
         grindProgress = Mathf.Max(0, Vector3.Dot(startToPlayer, railDirection));
 
-        Debug.Log("Started grinding! Initial progress: " + grindProgress);
+        Debug.Log("Started grinding! Segments: " + (points.Count - 1));
     }
 
     public void EndGrind()
     {
         in_grind = false;
-        grindStart = null;
-        grindEnd = null;
+        grindPoints = null;
+        currentGrindSegment = 0;
+        grindProgress = 0f;
 
         // Unfreeze the rigidbody
         rb.constraints = RigidbodyConstraints.None;
