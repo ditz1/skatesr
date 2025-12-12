@@ -23,6 +23,15 @@ public class BoardController : MonoBehaviour
     
     public bool isResettingRotation = false;
 
+    // Grind variables
+    private Transform grindStart;
+    private Transform grindEnd;
+    private float grindSpeed = 5f;
+    private float grindAlignSpeed = 10f;
+    private float grindProgress = 0f;
+    private float grindCooldown = 0f; 
+    private float grindCooldownDuration = 0.25f;
+
     // Combo input buffer
     [Header("Trick Input Settings")]
     [Tooltip("Number of frames to allow combo input after starting a trick")]
@@ -47,17 +56,28 @@ public class BoardController : MonoBehaviour
 
     void Update()
     {
-        PushForward();
+        // Tick down grind cooldown
+        if (grindCooldown > 0)
+        {
+            grindCooldown -= Time.deltaTime;
+        }
+
+        // Only allow normal movement when NOT grinding
+        if (!in_grind)
+        {
+            PushForward();
+
+            if (!trickController.isPerformingTrick || !boardGroundDetect.isGrounded) {
+                Move(moveInput);
+            }
+        }
+
         trickController.isGrounded = boardGroundDetect.isGrounded;
 
-        if (!trickController.isPerformingTrick || !boardGroundDetect.isGrounded) {
-            Move(moveInput);
-        }
-        
         HandleManualTilt();
         HandleJump();
         HandleTrick();
-        HandleGrind();
+        HandleGrind(); // This handles the grinding movement
 
         if (Keyboard.current.aKey.isPressed) {
             moveInput = -1;
@@ -68,14 +88,95 @@ public class BoardController : MonoBehaviour
         }
     }
 
+    public bool IsGrindOnCooldown()
+    {
+        return grindCooldown > 0;
+    }
+
     void HandleGrind()
     {
-        if (in_grind) {
-            // freeze x direction
-            rb.constraints = RigidbodyConstraints.FreezePositionX;
-        } else {
+        if (in_grind && grindStart != null && grindEnd != null)
+        {
+            // Completely freeze the rigidbody - we'll handle all movement manually
+            rb.constraints = RigidbodyConstraints.FreezeAll;
+            FollowGrindRail();
+        }
+        else
+        {
             rb.constraints = RigidbodyConstraints.None;
         }
+    }
+
+    void FollowGrindRail()
+    {
+        Vector3 startPos = grindStart.position;
+        Vector3 endPos = grindEnd.position;
+        Vector3 railDirection = (endPos - startPos).normalized;
+        float railTotalLength = Vector3.Distance(startPos, endPos);
+
+        // Check if we've reached the end
+        if (grindProgress >= railTotalLength)
+        {
+            EndGrind();
+            return;
+        }
+
+        // Simply increment progress - no recalculation from position
+        grindProgress += grindSpeed * Time.deltaTime;
+
+        // Clamp to rail length
+        grindProgress = Mathf.Clamp(grindProgress, 0, railTotalLength);
+
+        // Calculate position on the rail based on progress
+        Vector3 newPosition = startPos + (railDirection * grindProgress);
+
+        // Apply y offset
+        transform.position = newPosition + new Vector3(0, 0.5f, 0);
+
+        // Align board rotation with rail direction
+        Quaternion targetRotation = Quaternion.LookRotation(railDirection);
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, grindAlignSpeed * Time.deltaTime);
+    }
+
+    public void StartGrind(Transform startPoint, Transform endPoint)
+    {
+        // Don't start grinding if we're in cooldown
+        if (grindCooldown > 0)
+        {
+            return;
+        }
+
+        in_grind = true;
+        grindStart = startPoint;
+        grindEnd = endPoint;
+
+        // Calculate initial progress along the rail based on current position
+        Vector3 startPos = startPoint.position;
+        Vector3 endPos = endPoint.position;
+        Vector3 railDirection = (endPos - startPos).normalized;
+
+        Vector3 startToPlayer = transform.position - startPos;
+        grindProgress = Mathf.Max(0, Vector3.Dot(startToPlayer, railDirection));
+
+        Debug.Log("Started grinding! Initial progress: " + grindProgress);
+    }
+
+    public void EndGrind()
+    {
+        in_grind = false;
+        grindStart = null;
+        grindEnd = null;
+
+        // Unfreeze the rigidbody
+        rb.constraints = RigidbodyConstraints.None;
+
+        // Give a small forward velocity when exiting the grind
+        rb.linearVelocity = transform.forward * moveSpeed;
+
+        // Start cooldown to prevent immediate re-grind
+        grindCooldown = grindCooldownDuration;
+
+        Debug.Log("Ended grind!");
     }
 
     void HandleManualTilt()
@@ -195,9 +296,15 @@ public class BoardController : MonoBehaviour
 
     void Jump()
     {
+        // If grinding, end the grind first so rigidbody can move
+        if (in_grind)
+        {
+            EndGrind();
+        }
+
         float normalizedHoldTime = jumpHoldTime / maxJumpHoldTime;
         float jumpForce = Mathf.Lerp(minJumpForce, maxJumpForce, normalizedHoldTime);
-        
+
         rb.linearVelocity = new Vector3(rb.linearVelocity.x, jumpForce, rb.linearVelocity.z);
         Debug.Log("Jump force: " + jumpForce);
     }

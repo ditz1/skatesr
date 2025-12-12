@@ -41,6 +41,7 @@ public class BoardGroundDetect : MonoBehaviour
 
     void Start()
     {
+        
         // Store the original X rotation
         originalXRotation = transform.localEulerAngles.x;
         targetXRotation = originalXRotation;
