@@ -10,7 +10,7 @@ public class BoardGroundDetect : MonoBehaviour
 
     [Header("Settings")]
     [Tooltip("Distance threshold to align with ground")]
-    public float alignmentThreshold = 0.4f;
+    public float alignmentThreshold = 0.3f;
     
     [Tooltip("How fast the board rotates to match ground")]
     float rotationSpeed = 10f;
@@ -51,12 +51,6 @@ public class BoardGroundDetect : MonoBehaviour
 
     void Update()
     {
-        // Handle manual tilting (should happen before ground alignment)
-        if (isGrounded) {
-            Debug.Log("Grounded");
-        } else {
-            Debug.Log("Not grounded");
-        }
         UpdateManualRotations();
         
         RaycastHit noseHit;
@@ -71,12 +65,6 @@ public class BoardGroundDetect : MonoBehaviour
             Debug.DrawRay(tail.position, Vector3.down * alignmentThreshold, tailHitGround ? Color.green : Color.red);
         }
         
-        // // CRITICAL: Don't rotate if performing a trick OR resetting
-        // if (trickController != null && trickController.isPerformingTrick)
-        // {
-        //     isGrounded = false;
-        //     return;
-        // }
         
         // CRITICAL: Don't override rotation during reset
         if (boardController != null && boardController.isResettingRotation)
@@ -215,6 +203,9 @@ public class BoardGroundDetect : MonoBehaviour
         if (nose == null || tail == null) return;
         
         Gizmos.color = Color.yellow;
+        if (boardController.in_grind) {
+            Gizmos.color = Color.green;
+        }
         Gizmos.DrawWireSphere(nose.position, 0.1f);
         Gizmos.DrawWireSphere(tail.position, 0.1f);
         Gizmos.DrawLine(nose.position, tail.position);

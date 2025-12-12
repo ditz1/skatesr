@@ -24,6 +24,7 @@ public class BoardController : MonoBehaviour
     
     public bool isResettingRotation = false;
 
+
    // Grind variables
     private Transform grindStart;
     private Transform grindEnd;
@@ -130,9 +131,11 @@ public class BoardController : MonoBehaviour
     
         // Calculate position on the rail based on progress
         Vector3 newPosition = startPos + (railDirection * grindProgress);
-    
+
         // Apply y offset
-        transform.position = newPosition + new Vector3(0, 0.5f, 0);
+        newPosition += new Vector3(0, 0.5f, 0);
+
+        transform.position = Vector3.Lerp(transform.position, newPosition, grindSpeed * Time.deltaTime * 2.0f);
     
         // Align board rotation with rail direction
         Quaternion targetRotation = Quaternion.LookRotation(railDirection);
@@ -196,22 +199,22 @@ public class BoardController : MonoBehaviour
 
         if (Keyboard.current.sKey.isPressed) {
             boardGroundDetect.RaiseTail();
-            boardGroundDetect.alignmentThreshold = 0.4f;
+            boardGroundDetect.alignmentThreshold = 0.3f;
 
         } 
         else if (Keyboard.current.sKey.wasReleasedThisFrame) {
             boardGroundDetect.ResetTail();
-            boardGroundDetect.alignmentThreshold = 0.4f;
+            boardGroundDetect.alignmentThreshold = 0.3f;
         }
 
         if ((Keyboard.current.qKey.isPressed && !boardGroundDetect.isManuallyTurning) && (!boardGroundDetect.isGrounded || in_grind)) { 
             boardGroundDetect.TurnBoardFrontside();
-            boardGroundDetect.alignmentThreshold = 0.4f;
+            boardGroundDetect.alignmentThreshold = 0.3f;
         } else if (Keyboard.current.qKey.wasReleasedThisFrame) {
             boardGroundDetect.ResetTurnBoardFrontside();
         } else if ((Keyboard.current.eKey.isPressed && !boardGroundDetect.isManuallyTurning) && (!boardGroundDetect.isGrounded || in_grind)) { 
             boardGroundDetect.TurnBoardBackside();
-            boardGroundDetect.alignmentThreshold = 0.4f;
+            boardGroundDetect.alignmentThreshold = 0.3f;
         } else if (Keyboard.current.eKey.wasReleasedThisFrame) {
             boardGroundDetect.ResetTurnBoardBackside();
         }

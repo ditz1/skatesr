@@ -1300,8 +1300,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ParkManager
   parkPrefabs:
-  - {fileID: 8865052901241567397, guid: f079bd9238fcd0843b26e2e513ba7d5f, type: 3}
-  - {fileID: 8865052901241567397, guid: eebe4500da22f8e4c96e46aa282d5ea9, type: 3}
+  - {fileID: 8865052901241567397, guid: af5f84ac56808ef4aa0b0e98bd2c4421, type: 3}
+  - {fileID: 8865052901241567397, guid: 6819c07f4c68b4c4cbdcb04fbe347595, type: 3}
   skaterTransform: {fileID: 728332826}
   initialPark: {fileID: 1771928390}
   maxParkRenders: 4
