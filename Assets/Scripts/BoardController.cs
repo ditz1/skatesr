@@ -8,7 +8,6 @@ public class BoardController : MonoBehaviour
     float turnSpeed = 4f;
     int moveInput = 0;
     private Rigidbody rb;
-
     // Jump variables
     float minJumpForce = 3.5f;
     float maxJumpForce = 7f;
@@ -24,6 +23,7 @@ public class BoardController : MonoBehaviour
     
     public bool isResettingRotation = false;
 
+    public bool in_manual = false;
 
    // Grind variables
     private Transform grindStart;
@@ -164,6 +164,7 @@ public class BoardController : MonoBehaviour
     
         Debug.Log("Started grinding! Initial progress: " + grindProgress);
     }
+
     
     public void EndGrind()
     {
@@ -185,36 +186,44 @@ public class BoardController : MonoBehaviour
 
     void HandleManualTilt()
     {
-        
+        float manual_tilt_threshold = 0.65f;
+        float turn_tilt_threshold = 0.3f;
+        // Nose manual
         if (Keyboard.current.wKey.isPressed) {
             boardGroundDetect.RaiseNose();
-            boardGroundDetect.alignmentThreshold = 0.65f;
+            boardGroundDetect.alignmentThreshold = manual_tilt_threshold;
 
-        } 
-        else if (Keyboard.current.wKey.wasReleasedThisFrame) {
+            in_manual = true;
+        } else if (Keyboard.current.wKey.wasReleasedThisFrame) {
             boardGroundDetect.ResetNose();
-            boardGroundDetect.alignmentThreshold = 0.65f;
+            boardGroundDetect.alignmentThreshold = turn_tilt_threshold;
 
+            in_manual = false;
         }
 
+        // Tail manual
         if (Keyboard.current.sKey.isPressed) {
             boardGroundDetect.RaiseTail();
-            boardGroundDetect.alignmentThreshold = 0.3f;
+            boardGroundDetect.alignmentThreshold = manual_tilt_threshold;
 
-        } 
-        else if (Keyboard.current.sKey.wasReleasedThisFrame) {
+            in_manual = true;
+        } else if (Keyboard.current.sKey.wasReleasedThisFrame) {
             boardGroundDetect.ResetTail();
-            boardGroundDetect.alignmentThreshold = 0.3f;
+            boardGroundDetect.alignmentThreshold = turn_tilt_threshold;
+
+            in_manual = false;
         }
 
+
+        // Frontside Backside turns
         if ((Keyboard.current.qKey.isPressed && !boardGroundDetect.isManuallyTurning) && (!boardGroundDetect.isGrounded || in_grind)) { 
             boardGroundDetect.TurnBoardFrontside();
-            boardGroundDetect.alignmentThreshold = 0.3f;
+            boardGroundDetect.alignmentThreshold = turn_tilt_threshold;
         } else if (Keyboard.current.qKey.wasReleasedThisFrame) {
             boardGroundDetect.ResetTurnBoardFrontside();
         } else if ((Keyboard.current.eKey.isPressed && !boardGroundDetect.isManuallyTurning) && (!boardGroundDetect.isGrounded || in_grind)) { 
             boardGroundDetect.TurnBoardBackside();
-            boardGroundDetect.alignmentThreshold = 0.3f;
+            boardGroundDetect.alignmentThreshold = turn_tilt_threshold;
         } else if (Keyboard.current.eKey.wasReleasedThisFrame) {
             boardGroundDetect.ResetTurnBoardBackside();
         }

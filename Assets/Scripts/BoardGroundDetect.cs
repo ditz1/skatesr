@@ -36,9 +36,6 @@ public class BoardGroundDetect : MonoBehaviour
     float originalYRotation;
     float targetYRotation;
     
-    bool isNoseRaised = false;
-    bool isTailRaised = false;
-
     void Start()
     {
         
@@ -167,33 +164,25 @@ public class BoardGroundDetect : MonoBehaviour
     }
 
     public void RaiseNose() 
-    {
-        isNoseRaised = true;
-        
+    {        
         // Rotate nose up (negative X rotation)
         targetXRotation = originalXRotation - maxTiltAngle;
     }
 
     public void ResetNose()
-    {
-        isNoseRaised = false;
-        
+    {        
         // Return to original rotation
         targetXRotation = originalXRotation;
     }
 
     public void RaiseTail() 
-    {
-        isTailRaised = true;
-        
+    {        
         // Rotate tail up (positive X rotation)
         targetXRotation = originalXRotation + maxTiltAngle;
     }
 
     public void ResetTail()
-    {
-        isTailRaised = false;
-        
+    {        
         // Return to original rotation
         targetXRotation = originalXRotation;
     }
@@ -209,5 +198,12 @@ public class BoardGroundDetect : MonoBehaviour
         Gizmos.DrawWireSphere(nose.position, 0.1f);
         Gizmos.DrawWireSphere(tail.position, 0.1f);
         Gizmos.DrawLine(nose.position, tail.position);
+
+        Gizmos.color = Color.red;
+        if (trickController.is_in_trick_line){
+            Gizmos.color = Color.green;
+        }
+        Vector3 t = new Vector3(transform.position.x, transform.position.y + 0.5f, transform.position.z - 1.0f);
+        Gizmos.DrawWireCube(t, new Vector3(0.1f, 0.1f, 0.1f));
     }
 }

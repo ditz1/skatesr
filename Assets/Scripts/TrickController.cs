@@ -13,15 +13,30 @@ public class TrickController : MonoBehaviour
     private Vector3 targetEulerAngles;
     public bool isGrounded = false;
     public BoardGroundDetect boardGroundDetect;
+    public HUDManager hudManager;
+
+    public bool is_in_trick_line = false;
+    private int tricks_in_current_line = 0;
+    private bool landed_last_trick_in_manual = false;
+    private bool has_landed_current_trick = false;
 
     float max_rotation = 35f;
 
     public Rigidbody board_rb;
+    public BoardController boardController;
 
     void Update()
     {
+
+        hudManager.is_in_trick_line = is_in_trick_line;
+        hudManager.tricks_in_current_line = tricks_in_current_line;
+
+        if (isGrounded && !has_landed_current_trick && currentTrick != -1)
+        {
+            HandleLanding();
+        }
+
         if (isPerformingTrick) {
-            // Cancel trick if we land while performing it
             if (isGrounded)
             {
                 CancelTrick();
@@ -29,11 +44,15 @@ public class TrickController : MonoBehaviour
             }
             PerformTrick();
         } else {
-            // Only handle automatic rotation if not manually turning
             if (boardGroundDetect != null && !boardGroundDetect.isManuallyTurning)
             {
                 HandleRotation();
             }
+        }
+
+        if (is_in_trick_line && landed_last_trick_in_manual && !boardController.in_manual && !isPerformingTrick && isGrounded && !boardController.in_grind)
+        {
+            EndTrickLine();
         }
     }
 
@@ -43,17 +62,82 @@ public class TrickController : MonoBehaviour
             Debug.Log("Already performing a trick!");
             return;
         }
-        
+
         Debug.Log($"Starting trick type: {trickType}");
+
+        has_landed_current_trick = false;
+
+        if (is_in_trick_line && landed_last_trick_in_manual)
+        {
+            tricks_in_current_line++;
+            landed_last_trick_in_manual = false;
+            UpdateMultiplier();
+            Debug.Log($"Combo trick #{tricks_in_current_line} in the line!");
+        }
+
         currentTrick = trickType;
         isPerformingTrick = true;
         trickProgress = 0f;
         trickStartTime = Time.time;
         startEulerAngles = transform.rotation.eulerAngles;
-        
+
         SetTrickRotation(trickType);
-        
+
         Debug.Log($"Start angles: {startEulerAngles}, Target angles: {targetEulerAngles}");
+    }
+
+    void HandleLanding()
+    {
+        has_landed_current_trick = true;
+
+        if (boardController.in_manual)
+        {
+            landed_last_trick_in_manual = true;
+
+            if (!is_in_trick_line)
+            {
+                StartTrickLine();
+            }
+        }
+        else
+        {
+            EndTrickLine();
+        }
+    }
+
+    void StartTrickLine()
+    {
+        is_in_trick_line = true;
+        tricks_in_current_line = 1;
+        Debug.Log("Trick line started!");
+        UpdateMultiplier();
+    }
+
+    void EndTrickLine()
+    {
+        // only end trick line if we get here and are not moving upward
+        if (board_rb.linearVelocity.y > 0.1f)
+        {
+            Debug.Log("Not ending trick line - moving upward");
+            return;
+        }
+        if (is_in_trick_line)
+        {
+            Debug.Log($"Trick line ended! Total tricks: {tricks_in_current_line}");
+        }
+
+        is_in_trick_line = false;
+        tricks_in_current_line = 0;
+        landed_last_trick_in_manual = false;
+
+        hudManager.UpdateScoreMultiplier(1f);
+    }
+
+    void UpdateMultiplier()
+    {
+        float multiplier = 1f + ((tricks_in_current_line - 1) * 0.5f);
+        hudManager.UpdateScoreMultiplier(multiplier);
+        Debug.Log($"Multiplier updated to {multiplier}x for trick #{tricks_in_current_line}");
     }
 
     public void UpgradeToCombo(int comboTrickType)
@@ -103,6 +187,8 @@ public class TrickController : MonoBehaviour
                 isPerformingTrick = false;
                 return;
         }
+        HandleTrickScore(trickType);
+        hudManager.AddTrickToQueue(trickType);
     }
 
     void PerformTrick()
@@ -126,14 +212,15 @@ public class TrickController : MonoBehaviour
         isPerformingTrick = false;
         currentTrick = -1;
         trickProgress = 0f;
+        has_landed_current_trick = false;
 
-        // Reset rotation to nearest clean angle (0, 90, 180, 270)
+        if (!boardController.in_manual)
+        {
+            EndTrickLine();
+        }
+
         Vector3 currentEuler = transform.rotation.eulerAngles;
-
-        // Snap to nearest 90-degree increment for Y rotation
         float nearestY = Mathf.Round(currentEuler.y / 90f) * 90f;
-
-        // Keep X and Z as they are (ground detection will handle X)
         transform.rotation = Quaternion.Euler(currentEuler.x, nearestY, currentEuler.z);
     }
 
@@ -172,6 +259,34 @@ public class TrickController : MonoBehaviour
         
         // Return the nearest base angle
         return distanceTo0 < distanceTo180 ? 0f : 180f;
+    }
+
+    void HandleTrickScore(int trick)
+    {
+        switch (trick) {
+            case 0:
+                hudManager.UpdateAddScore(100f);
+                break;
+            case 1:
+                hudManager.UpdateAddScore(100f);
+                break;
+            case 2:
+                hudManager.UpdateAddScore(100f);
+                break;
+            case 3:
+                hudManager.UpdateAddScore(300f);
+                break;
+            case 4:
+                hudManager.UpdateAddScore(300f);
+                break;
+            default:
+                break;
+        }
+    }
+
+    void HandleTrickMultiplier()
+    {
+
     }
 
     void HandleRotation()
