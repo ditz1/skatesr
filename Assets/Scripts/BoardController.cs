@@ -204,8 +204,8 @@ public class BoardController : MonoBehaviour
     void HandleManualTilt()
     {
         float manual_tilt_threshold = 0.65f;
-        float turn_tilt_threshold = 0.3f;
-        boardGroundDetect.alignmentThreshold = 0.4f;
+        float turn_tilt_threshold = 0.4f;
+        boardGroundDetect.alignmentThreshold = 0.5f;
         // Nose manual
         if (Keyboard.current.wKey.isPressed) {
             boardGroundDetect.RaiseNose();
