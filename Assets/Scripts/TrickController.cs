@@ -20,10 +20,11 @@ public class TrickController : MonoBehaviour
     private bool landed_last_trick_in_manual = false;
     private bool has_landed_current_trick = false;
 
-    float max_rotation = 35f;
+    float max_rotation = 45f;
 
     public Rigidbody board_rb;
     public BoardController boardController;
+    
 
     void Update()
     {
@@ -101,7 +102,10 @@ public class TrickController : MonoBehaviour
         }
         else
         {
-            EndTrickLine();
+            if (!boardController.in_grind)
+            {
+                EndTrickLine();
+            }
         }
     }
 
@@ -161,6 +165,7 @@ public class TrickController : MonoBehaviour
 
     void SetTrickRotation(int trickType)
     {
+        if (startEulerAngles.x != 0) startEulerAngles.x = 0;
         switch (trickType) {
             case 0:
                 Kickflip();
@@ -206,7 +211,7 @@ public class TrickController : MonoBehaviour
         trickProgress = 0f;
         has_landed_current_trick = false;
 
-        if (!boardController.in_manual)
+        if (!boardController.in_manual && !boardController.in_grind)
         {
             EndTrickLine();
         }
@@ -280,6 +285,8 @@ public class TrickController : MonoBehaviour
     {
 
     }
+
+
 
     void HandleRotation()
     {

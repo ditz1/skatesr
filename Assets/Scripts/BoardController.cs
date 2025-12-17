@@ -9,8 +9,8 @@ public class BoardController : MonoBehaviour
     int moveInput = 0;
     private Rigidbody rb;
     // Jump variables
-    float minJumpForce = 3.5f;
-    float maxJumpForce = 7f;
+    float minJumpForce = 4.0f;
+    float maxJumpForce = 8.0f;
     float maxJumpHoldTime = 2f;
     float jumpHoldTime = 0f;
     bool isChargingJump = false;
@@ -18,6 +18,7 @@ public class BoardController : MonoBehaviour
     public BoardGroundDetect boardGroundDetect;
     public TrickController trickController;
     public PlayerController playerController;
+    public Animator animator;
 
     public bool in_grind = false;
     
@@ -33,6 +34,7 @@ public class BoardController : MonoBehaviour
     private float grindProgress = 0f;
     private float grindCooldown = 0f; 
     private float grindCooldownDuration = 0.025f;
+
 
 
     public bool is_dead = false;
@@ -67,6 +69,9 @@ public class BoardController : MonoBehaviour
     {
         if (is_dead) return;
 
+        // skateidle should only play if there is not any other animation playing
+        //if ()
+
         // Tick down grind cooldown
         if (grindCooldown > 0)
         {
@@ -83,6 +88,8 @@ public class BoardController : MonoBehaviour
             }
         }
 
+        TiltBoardOnJump();
+
         trickController.isGrounded = boardGroundDetect.isGrounded;
 
         HandleManualTilt();
@@ -97,6 +104,7 @@ public class BoardController : MonoBehaviour
         } else {
             moveInput = 0;
         }
+
 
         CheckForStoppageForward();
     }
@@ -202,7 +210,7 @@ public class BoardController : MonoBehaviour
         if (Keyboard.current.wKey.isPressed) {
             boardGroundDetect.RaiseNose();
             boardGroundDetect.alignmentThreshold = manual_tilt_threshold;
-
+            animator.Play("manual");
             in_manual = true;
         } else if (Keyboard.current.wKey.wasReleasedThisFrame) {
             boardGroundDetect.ResetNose();
@@ -215,6 +223,7 @@ public class BoardController : MonoBehaviour
         if (Keyboard.current.sKey.isPressed) {
             boardGroundDetect.RaiseTail();
             boardGroundDetect.alignmentThreshold = manual_tilt_threshold;
+            animator.Play("nosemanual");
 
             in_manual = true;
         } else if (Keyboard.current.sKey.wasReleasedThisFrame) {
@@ -301,24 +310,31 @@ public class BoardController : MonoBehaviour
         // Start single tricks when not performing any trick
         if (Keyboard.current.jKey.isPressed) {
             trickController.StartTrick(0); // kickflip
+            animator.Play("kickflip");
         }
         else if (Keyboard.current.kKey.isPressed) {
             trickController.StartTrick(1); // shuvit
+            animator.Play("shuvit");
         }
         else if (Keyboard.current.lKey.isPressed) {
             trickController.StartTrick(2); // heelflip
+            animator.Play("kickflip");
         }
         // Backup single key options (U and I keys for direct combo access)
         else if (Keyboard.current.uKey.isPressed) {
             trickController.StartTrick(3); // varial kickflip
+            animator.Play("shuvit");
         }
         else if (Keyboard.current.iKey.isPressed) {
             trickController.StartTrick(4); // varial heelflip
+            animator.Play("shuvit");
         }
     }
 
     void Jump()
     {
+
+        animator.Play("ollie");
         // If grinding, end the grind first so rigidbody can move
         if (in_grind)
         {
@@ -329,6 +345,24 @@ public class BoardController : MonoBehaviour
         float jumpForce = Mathf.Lerp(minJumpForce, maxJumpForce, normalizedHoldTime);
 
         rb.linearVelocity = new Vector3(rb.linearVelocity.x, jumpForce, rb.linearVelocity.z);
+    }
+
+   void TiltBoardOnJump() {
+        // Reset immediately if performing a trick
+        if (trickController.isPerformingTrick) {
+            boardGroundDetect.ResetNose();
+            return;
+        }
+
+        // Tilt up once at the start of jump
+        if (rb.linearVelocity.y > 2.0f && !boardGroundDetect.isGrounded) {
+            boardGroundDetect.RaiseNose();
+        } 
+        // Tilt down once when velocity drops OR when we land
+        else if (rb.linearVelocity.y < 1.5f || boardGroundDetect.isGrounded) {
+            boardGroundDetect.ResetNose();
+        }
+        
     }
 
     void PushForward() {
@@ -347,10 +381,10 @@ public class BoardController : MonoBehaviour
         
         wall_hit_frames--;
         // When countdown reaches 0, check if player is stuck
-        if (wall_hit_frames <= 0) {
+        if (wall_hit_frames <= 0 && !in_grind) {
             // Check if player hasn't moved forward enough (stuck/hit wall)
             // If current z position is NOT significantly ahead of the old position, they're stuck
-            if ((transform.position.z - last_wall_hit.z) < 0.01f) {
+            if ((transform.position.z - last_wall_hit.z) < 0.005f) {
                 is_dead = true;
                 Debug.Log("Player is stuck! Not moving forward enough.");
             }

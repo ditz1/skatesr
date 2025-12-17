@@ -20,7 +20,7 @@ public class BoardGroundDetect : MonoBehaviour
 
     [Header("Manual Tilt Settings")]
     [Tooltip("Maximum rotation angle for manual tilt (in degrees)")]
-    float maxTiltAngle = 45f;
+    float maxTiltAngle = 35f;
     
     [Tooltip("Speed at which the board rotates to target angle")]
     float tiltSpeed = 5f;
@@ -166,8 +166,13 @@ public class BoardGroundDetect : MonoBehaviour
     public void RaiseNose() 
     {        
         // Rotate nose up (negative X rotation)
-        targetXRotation = originalXRotation - maxTiltAngle;
+        if (Mathf.Abs(transform.localEulerAngles.y) > 160f){
+            targetXRotation = originalXRotation + maxTiltAngle;
+        } else {
+            targetXRotation = originalXRotation - maxTiltAngle;
+        }
     }
+
 
     public void ResetNose()
     {        
@@ -178,7 +183,11 @@ public class BoardGroundDetect : MonoBehaviour
     public void RaiseTail() 
     {        
         // Rotate tail up (positive X rotation)
-        targetXRotation = originalXRotation + maxTiltAngle;
+        if (Mathf.Abs(transform.localEulerAngles.y) > 160f){
+            targetXRotation = originalXRotation - maxTiltAngle;
+        } else {
+            targetXRotation = originalXRotation + maxTiltAngle;
+        }
     }
 
     public void ResetTail()

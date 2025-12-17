@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
 {
@@ -7,6 +8,9 @@ public class PlayerController : MonoBehaviour
     float max_rotation = 35f;
     public Transform player_transform;
     
+    private float targetYRotation = 0f;
+    private float baseYRotation = 0f;
+    
     void Start()
     {
         originalRotation = transform.rotation;
@@ -14,25 +18,41 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-       
-        
         transform.rotation = originalRotation;
-        HandleRotation();
-      
+        
+        // Calculate base rotation from velocity
+        CalculateBaseRotation();
+        
+        // Handle Q/E key offsets
+        if (Keyboard.current.qKey.isPressed) {
+            targetYRotation = baseYRotation - 60f;
+        }
+        else if (Keyboard.current.eKey.isPressed) {
+            targetYRotation = baseYRotation + 60f;
+        }
+        else {
+            targetYRotation = baseYRotation;
+        }
+        
+        // Lerp to target rotation
+        Vector3 currentEuler = player_transform.rotation.eulerAngles;
+        Quaternion targetRotation = Quaternion.Euler(currentEuler.x, targetYRotation, currentEuler.z);
+        player_transform.rotation = Quaternion.Slerp(player_transform.rotation, targetRotation, Time.deltaTime * 10f);
     }
 
-    void HandleRotation()
+    void CalculateBaseRotation()
     {
         if (board_rb.linearVelocity.x > 0.1f)
         {
-            player_transform.rotation = Quaternion.Euler(0, max_rotation, 0);
+            baseYRotation = max_rotation;
         }
         else if (board_rb.linearVelocity.x < -0.1f)
         {
-            player_transform.rotation = Quaternion.Euler(0, -max_rotation, 0);
-
-        } else {
-            player_transform.rotation = Quaternion.Euler(0, 0, 0);
+            baseYRotation = -max_rotation;
+        }
+        else
+        {
+            baseYRotation = 0f;
         }
     }
 }
