@@ -34,6 +34,13 @@ public class BoardController : MonoBehaviour
     private float grindCooldown = 0f; 
     private float grindCooldownDuration = 0.025f;
 
+
+    public bool is_dead = false;
+    Vector3 last_wall_hit;
+    int wall_hit_frames = 20;
+    int buffer_frames = 50;
+    
+
     // Combo input buffer
     [Header("Trick Input Settings")]
     [Tooltip("Number of frames to allow combo input after starting a trick")]
@@ -58,6 +65,8 @@ public class BoardController : MonoBehaviour
 
     void Update()
     {
+        if (is_dead) return;
+
         // Tick down grind cooldown
         if (grindCooldown > 0)
         {
@@ -88,6 +97,8 @@ public class BoardController : MonoBehaviour
         } else {
             moveInput = 0;
         }
+
+        CheckForStoppageForward();
     }
 
     public bool IsGrindOnCooldown()
@@ -162,7 +173,6 @@ public class BoardController : MonoBehaviour
         Vector3 startToPlayer = transform.position - startPos;
         grindProgress = Mathf.Max(0, Vector3.Dot(startToPlayer, railDirection));
     
-        Debug.Log("Started grinding! Initial progress: " + grindProgress);
     }
 
     
@@ -181,13 +191,13 @@ public class BoardController : MonoBehaviour
         // Start cooldown to prevent immediate re-grind
         grindCooldown = grindCooldownDuration;
     
-        Debug.Log("Ended grind!");
     }
 
     void HandleManualTilt()
     {
         float manual_tilt_threshold = 0.65f;
         float turn_tilt_threshold = 0.3f;
+        boardGroundDetect.alignmentThreshold = 0.4f;
         // Nose manual
         if (Keyboard.current.wKey.isPressed) {
             boardGroundDetect.RaiseNose();
@@ -319,7 +329,6 @@ public class BoardController : MonoBehaviour
         float jumpForce = Mathf.Lerp(minJumpForce, maxJumpForce, normalizedHoldTime);
 
         rb.linearVelocity = new Vector3(rb.linearVelocity.x, jumpForce, rb.linearVelocity.z);
-        Debug.Log("Jump force: " + jumpForce);
     }
 
     void PushForward() {
@@ -328,5 +337,27 @@ public class BoardController : MonoBehaviour
 
     void Move(int input){
         rb.linearVelocity = new Vector3(input * turnSpeed, rb.linearVelocity.y, moveSpeed);
+    }
+
+    void CheckForStoppageForward() {
+        if (buffer_frames > 0) {
+            buffer_frames--;
+            return;
+        }
+        
+        wall_hit_frames--;
+        // When countdown reaches 0, check if player is stuck
+        if (wall_hit_frames <= 0) {
+            // Check if player hasn't moved forward enough (stuck/hit wall)
+            // If current z position is NOT significantly ahead of the old position, they're stuck
+            if ((transform.position.z - last_wall_hit.z) < 0.01f) {
+                is_dead = true;
+                Debug.Log("Player is stuck! Not moving forward enough.");
+            }
+            //Debug.Log("Player movement change: " + (transform.position.z - last_wall_hit.z));
+
+            wall_hit_frames = 50;
+            last_wall_hit = transform.position;
+        }
     }
 }

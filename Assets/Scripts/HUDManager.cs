@@ -16,6 +16,8 @@ public class HUDManager : MonoBehaviour
 
     public TextMeshProUGUI trick_line_text;
 
+    public TextMeshProUGUI slammed_text;
+
     public float lerpSpeed = 5f; // Adjust this to control animation speed
 
     // queue will be static size of 3
@@ -23,6 +25,7 @@ public class HUDManager : MonoBehaviour
 
     public bool is_in_trick_line = false;
     public int tricks_in_current_line = 0;
+    public bool is_slammed = false;
 
 
     void Start()
@@ -33,10 +36,15 @@ public class HUDManager : MonoBehaviour
         tracker3.text = "";
 
         trick_line_text.text = "";
+        slammed_text.text = "";
     }
 
     void Update()
     {
+        if (is_slammed) {
+            slammed_text.text = "SLAMMED";
+        }
+
         LerpScore();
         UpdateTrackerText();
         UpdateTrickLineText();

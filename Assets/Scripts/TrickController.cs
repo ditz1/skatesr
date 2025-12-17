@@ -27,6 +27,10 @@ public class TrickController : MonoBehaviour
 
     void Update()
     {
+        if (boardController.is_dead)
+        {
+            hudManager.is_slammed = true;
+        }
 
         hudManager.is_in_trick_line = is_in_trick_line;
         hudManager.tricks_in_current_line = tricks_in_current_line;
@@ -59,11 +63,9 @@ public class TrickController : MonoBehaviour
     public void StartTrick(int trickType)
     {
         if (isPerformingTrick) {
-            Debug.Log("Already performing a trick!");
             return;
         }
 
-        Debug.Log($"Starting trick type: {trickType}");
 
         has_landed_current_trick = false;
 
@@ -72,7 +74,6 @@ public class TrickController : MonoBehaviour
             tricks_in_current_line++;
             landed_last_trick_in_manual = false;
             UpdateMultiplier();
-            Debug.Log($"Combo trick #{tricks_in_current_line} in the line!");
         }
 
         currentTrick = trickType;
@@ -83,7 +84,6 @@ public class TrickController : MonoBehaviour
 
         SetTrickRotation(trickType);
 
-        Debug.Log($"Start angles: {startEulerAngles}, Target angles: {targetEulerAngles}");
     }
 
     void HandleLanding()
@@ -109,7 +109,6 @@ public class TrickController : MonoBehaviour
     {
         is_in_trick_line = true;
         tricks_in_current_line = 1;
-        Debug.Log("Trick line started!");
         UpdateMultiplier();
     }
 
@@ -118,12 +117,10 @@ public class TrickController : MonoBehaviour
         // only end trick line if we get here and are not moving upward
         if (board_rb.linearVelocity.y > 0.1f)
         {
-            Debug.Log("Not ending trick line - moving upward");
             return;
         }
         if (is_in_trick_line)
         {
-            Debug.Log($"Trick line ended! Total tricks: {tricks_in_current_line}");
         }
 
         is_in_trick_line = false;
@@ -137,12 +134,10 @@ public class TrickController : MonoBehaviour
     {
         float multiplier = 1f + ((tricks_in_current_line - 1) * 0.5f);
         hudManager.UpdateScoreMultiplier(multiplier);
-        Debug.Log($"Multiplier updated to {multiplier}x for trick #{tricks_in_current_line}");
     }
 
     public void UpgradeToCombo(int comboTrickType)
     {
-        Debug.Log($"Upgrading trick {currentTrick} to combo trick {comboTrickType}");
         
         // Reset the trick with new target
         currentTrick = comboTrickType;
@@ -152,7 +147,6 @@ public class TrickController : MonoBehaviour
         
         SetTrickRotation(comboTrickType);
         
-        Debug.Log($"Combo - Start angles: {startEulerAngles}, Target angles: {targetEulerAngles}");
     }
 
     public bool IsInComboWindow(float comboWindowTime)
@@ -199,7 +193,6 @@ public class TrickController : MonoBehaviour
             transform.rotation = Quaternion.Euler(targetEulerAngles);
             isPerformingTrick = false;
             trickProgress = 0f;
-            Debug.Log("Trick complete!");
         } else {
             Vector3 currentEulerAngles = Vector3.Lerp(startEulerAngles, targetEulerAngles, trickProgress);
             transform.rotation = Quaternion.Euler(currentEulerAngles);
@@ -208,7 +201,6 @@ public class TrickController : MonoBehaviour
 
     void CancelTrick()
     {
-        Debug.Log("Trick cancelled - landed!");
         isPerformingTrick = false;
         currentTrick = -1;
         trickProgress = 0f;
