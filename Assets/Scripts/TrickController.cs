@@ -31,6 +31,8 @@ public class TrickController : MonoBehaviour
         if (boardController.is_dead)
         {
             hudManager.is_slammed = true;
+        } else {
+            hudManager.is_slammed = false;
         }
 
         hudManager.is_in_trick_line = is_in_trick_line;

@@ -67,7 +67,14 @@ public class BoardController : MonoBehaviour
 
     void Update()
     {
-        if (is_dead) return;
+        if (is_dead)
+        {
+            if (Keyboard.current.rKey.wasPressedThisFrame)
+            {
+                RespawnPlayer();
+            }
+            return;
+        }
 
         // skateidle should only play if there is not any other animation playing
         //if ()
@@ -371,6 +378,30 @@ public class BoardController : MonoBehaviour
 
     void Move(int input){
         rb.linearVelocity = new Vector3(input * turnSpeed, rb.linearVelocity.y, moveSpeed);
+    }
+
+    void RespawnPlayer()
+    {
+        // Move the player slightly forward and up to avoid obstacles
+        float forwardOffset = 2.5f;
+        float heightOffset = 0.6f;
+
+        Vector3 respawnPosition = transform.position + (transform.forward * forwardOffset) + (Vector3.up * heightOffset);
+
+        in_grind = false;
+        rb.constraints = RigidbodyConstraints.None;
+        transform.position = respawnPosition;
+
+        // Clear velocity so normal movement can resume cleanly
+        rb.linearVelocity = Vector3.zero;
+
+        // Reset tracking used for stuck detection
+        wall_hit_frames = 50;
+        buffer_frames = 50;
+        last_wall_hit = respawnPosition;
+
+        is_dead = false;
+        trickController.hudManager.is_slammed = false;
     }
 
     void CheckForStoppageForward() {

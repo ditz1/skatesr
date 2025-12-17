@@ -26,6 +26,7 @@ public class HUDManager : MonoBehaviour
     public bool is_in_trick_line = false;
     public int tricks_in_current_line = 0;
     public bool is_slammed = false;
+    bool should_reset_points = false;
 
 
     void Start()
@@ -43,11 +44,28 @@ public class HUDManager : MonoBehaviour
     {
         if (is_slammed) {
             slammed_text.text = "SLAMMED";
+            should_reset_points = true;
+        } else {
+            slammed_text.text = "";
         }
 
         LerpScore();
         UpdateTrackerText();
         UpdateTrickLineText();
+        CheckResetPointsOnSlammed();
+
+    }
+
+    void CheckResetPointsOnSlammed()
+    {
+        if (should_reset_points && !is_slammed)
+        {
+            should_reset_points = false;
+            score_current = 0;
+            score_target = 0;
+            score_multiplier = 1f;
+        }
+
     }
 
     void LerpScore()
