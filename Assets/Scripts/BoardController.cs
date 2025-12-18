@@ -26,6 +26,17 @@ public class BoardController : MonoBehaviour
 
     public bool in_manual = false;
 
+    [Header("180 Turn Settings")]
+    public float turn180Duration = 0.35f;
+    public bool isTurning180 = false;
+    float turn180StartTime;
+    float turn180AngleRemaining;
+    float turn180Direction = 1f;
+    bool lockTurnInput = false;
+    bool rotateBoardThisTurn = true;
+    bool manualTurnStateBefore180 = false;
+    bool pendingScaleFlip = false;
+
    // Grind variables
     private Transform grindStart;
     private Transform grindEnd;
@@ -85,6 +96,10 @@ public class BoardController : MonoBehaviour
             grindCooldown -= Time.deltaTime;
         }
 
+        Handle180TurnInput();
+        Update180Turn();
+        ApplyPendingScaleFlip();
+
         // Only allow normal movement when NOT grinding
         if (!in_grind)
         {
@@ -114,6 +129,122 @@ public class BoardController : MonoBehaviour
 
 
         CheckForStoppageForward();
+    }
+
+    void Handle180TurnInput()
+    {
+        if (boardGroundDetect != null && boardGroundDetect.isGrounded) return;
+        if (in_grind) return;
+        if (isTurning180) return;
+
+        // Reset input lock once keys are released
+        if (!Keyboard.current.zKey.isPressed && !Keyboard.current.cKey.isPressed)
+        {
+            lockTurnInput = false;
+        }
+
+        if (lockTurnInput) return;
+
+        if (Keyboard.current.zKey.isPressed)
+        {
+            Start180Turn(-180f);
+            lockTurnInput = true;
+        }
+        else if (Keyboard.current.cKey.isPressed)
+        {
+            Start180Turn(180f);
+            lockTurnInput = true;
+        }
+    }
+
+    void Start180Turn(float direction)
+    {
+        if (isTurning180) return;
+
+        isTurning180 = true;
+        rotateBoardThisTurn = trickController == null || !trickController.isPerformingTrick;
+        turn180StartTime = Time.time;
+        turn180AngleRemaining = direction;
+        turn180Direction = Mathf.Sign(direction);
+
+        if (boardGroundDetect != null)
+        {
+            manualTurnStateBefore180 = boardGroundDetect.isManuallyTurning;
+            boardGroundDetect.isManuallyTurning = true;
+        }
+
+        if (playerController != null)
+        {
+            playerController.Start180Turn(direction, turn180Duration);
+        }
+    }
+
+    void Update180Turn()
+    {
+        if (!isTurning180) return;
+
+        float normalized = Mathf.Clamp01((Time.time - turn180StartTime) / turn180Duration);
+        float degreesPerSecond = 180f / turn180Duration;
+        float step = turn180Direction * degreesPerSecond * Time.deltaTime;
+
+        // Clamp so we never overshoot
+        if (Mathf.Abs(step) > Mathf.Abs(turn180AngleRemaining))
+        {
+            step = turn180AngleRemaining;
+        }
+
+        if (rotateBoardThisTurn)
+        {
+            transform.Rotate(0f, step, 0f, Space.World);
+        }
+
+        // if (playerController.skater_mesh_transform.rotation.y > 0){
+        //     playerController.skater_mesh_transform.localPosition = new Vector3(-0.2f, playerController.skater_mesh_transform.localPosition.y, playerController.skater_mesh_transform.localPosition.z);
+        // } else {
+        //     playerController.skater_mesh_transform.localPosition = new Vector3(0.2f, playerController.skater_mesh_transform.localPosition.y, playerController.skater_mesh_transform.localPosition.z);
+        // }
+
+        // Always count down even if the board isn't rotating (e.g., during tricks)
+        turn180AngleRemaining -= step;
+
+        if (normalized >= 1f || Mathf.Approximately(turn180AngleRemaining, 0f))
+        {
+            Finish180Turn();
+        }
+    }
+
+    void Finish180Turn()
+    {
+        pendingScaleFlip = true;
+
+        if (boardGroundDetect != null)
+        {
+            boardGroundDetect.isManuallyTurning = manualTurnStateBefore180;
+        }
+
+        turn180AngleRemaining = 0f;
+        isTurning180 = false;
+
+        if (playerController.YawIsPositive()) {
+            Vector3 scale = new Vector3(-1f, 1f, 1f);
+            playerController.skater_mesh_transform.localScale = scale;
+        } else {
+            Vector3 scale = new Vector3(1f, 1f, 1f);
+            playerController.skater_mesh_transform.localScale = scale;
+        }
+    }
+
+    void ApplyPendingScaleFlip()
+    {
+        if (!pendingScaleFlip) return;
+        if (boardGroundDetect == null) return;
+        if (!boardGroundDetect.isGrounded) return;
+
+        Transform scaleTarget = playerController != null && playerController.skater_mesh_transform != null
+            ? playerController.skater_mesh_transform
+            : transform;
+        
+        pendingScaleFlip = false;
     }
 
     public bool IsGrindOnCooldown()

@@ -51,7 +51,7 @@ public class TrickController : MonoBehaviour
             }
             PerformTrick();
         } else {
-            if (boardGroundDetect != null && !boardGroundDetect.isManuallyTurning)
+            if (isGrounded && boardGroundDetect != null && !boardGroundDetect.isManuallyTurning && boardController != null && !boardController.isTurning180)
             {
                 HandleRotation();
             }
