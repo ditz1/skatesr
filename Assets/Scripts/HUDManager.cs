@@ -131,6 +131,20 @@ public class HUDManager : MonoBehaviour
                 return "varial kickflip";
             case 4:
                 return "varial heelflip";
+            case 5:
+                return "50-50";
+            case 6:
+                return "front board";
+            case 7:
+                return "back board";
+            case 8:
+                return "5-0";
+            case 9:
+                return "nosegrind";
+            case 10:
+                return "tailslide";
+            case 11:
+                return "noseslide";
             default:
                 return " ";
         }

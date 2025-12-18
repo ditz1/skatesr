@@ -37,7 +37,7 @@ public class BoardController : MonoBehaviour
     bool manualTurnStateBefore180 = false;
     bool pendingScaleFlip = false;
 
-   // Grind variables
+    // Grind variables
     private Transform grindStart;
     private Transform grindEnd;
     private float grindSpeed = 5f;
@@ -45,6 +45,13 @@ public class BoardController : MonoBehaviour
     private float grindProgress = 0f;
     private float grindCooldown = 0f; 
     private float grindCooldownDuration = 0.025f;
+
+
+    // Grind State Trackers
+    // basically just need to track if the player is trying to boardslide
+    // and dont want to go through and calculate y rotation so do it by input
+    int tweaked_y_rot = 0;
+    int tweaked_x_rot = 0;
 
 
 
@@ -298,6 +305,44 @@ public class BoardController : MonoBehaviour
         Quaternion targetRotation = Quaternion.LookRotation(railDirection);
         transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, grindAlignSpeed * Time.deltaTime);
     }
+
+    void QueueGrindType()
+    {
+        /*
+        -1 -1
+        -1  1
+        -1  0
+         1 -1
+         1  1
+         1  0
+         0 -1
+         0  1
+         0  0
+        */
+        if (tweaked_y_rot == -1 && tweaked_x_rot == -1) {
+            trickController.hudManager.AddTrickToQueue(10); // tailslide
+        } else if (tweaked_y_rot == -1 && tweaked_x_rot == 1) {
+            trickController.hudManager.AddTrickToQueue(11); // noseslide
+        } else if (tweaked_y_rot == -1 && tweaked_x_rot == 0) {
+            trickController.hudManager.AddTrickToQueue(7); // back board
+
+        } else if (tweaked_y_rot == 1 && tweaked_x_rot == 0) {
+            trickController.hudManager.AddTrickToQueue(6); // front board
+        } else if (tweaked_y_rot == 1 && tweaked_x_rot == -1) {
+            trickController.hudManager.AddTrickToQueue(7); // back board
+        } else if (tweaked_y_rot == 1 && tweaked_x_rot == 1) {
+            trickController.hudManager.AddTrickToQueue(10); // tailslide
+
+        } else if (tweaked_y_rot == 0 && tweaked_x_rot == -1) {
+            trickController.hudManager.AddTrickToQueue(9); // 5-0
+        } else if (tweaked_y_rot == 0 && tweaked_x_rot == 0) {
+            trickController.hudManager.AddTrickToQueue(5); // nosegrind
+        } else if (tweaked_y_rot == 0 && tweaked_x_rot == 1) {
+            trickController.hudManager.AddTrickToQueue(8); // nosegrind
+        }
+        
+
+    }
     
     public void StartGrind(Transform startPoint, Transform endPoint)
     {
@@ -310,6 +355,8 @@ public class BoardController : MonoBehaviour
         in_grind = true;
         grindStart = startPoint;
         grindEnd = endPoint;
+
+        QueueGrindType();
     
         // Calculate initial progress along the rail based on current position
         Vector3 startPos = startPoint.position;
@@ -349,11 +396,12 @@ public class BoardController : MonoBehaviour
             boardGroundDetect.RaiseNose();
             boardGroundDetect.alignmentThreshold = manual_tilt_threshold;
             animator.Play("manual");
+            tweaked_x_rot = 1;
             in_manual = true;
         } else if (Keyboard.current.wKey.wasReleasedThisFrame) {
             boardGroundDetect.ResetNose();
             boardGroundDetect.alignmentThreshold = turn_tilt_threshold;
-
+            tweaked_x_rot = 0;
             in_manual = false;
         }
 
@@ -362,12 +410,12 @@ public class BoardController : MonoBehaviour
             boardGroundDetect.RaiseTail();
             boardGroundDetect.alignmentThreshold = manual_tilt_threshold;
             animator.Play("nosemanual");
-
+            tweaked_x_rot = -1;
             in_manual = true;
         } else if (Keyboard.current.sKey.wasReleasedThisFrame) {
             boardGroundDetect.ResetTail();
             boardGroundDetect.alignmentThreshold = turn_tilt_threshold;
-
+            tweaked_x_rot = 0;
             in_manual = false;
         }
 
@@ -375,14 +423,18 @@ public class BoardController : MonoBehaviour
         // Frontside Backside turns
         if ((Keyboard.current.qKey.isPressed && !boardGroundDetect.isManuallyTurning) && (!boardGroundDetect.isGrounded || in_grind)) { 
             boardGroundDetect.TurnBoardFrontside();
+            tweaked_y_rot = 1;
             boardGroundDetect.alignmentThreshold = turn_tilt_threshold;
         } else if (Keyboard.current.qKey.wasReleasedThisFrame) {
             boardGroundDetect.ResetTurnBoardFrontside();
+            tweaked_y_rot = 0;
         } else if ((Keyboard.current.eKey.isPressed && !boardGroundDetect.isManuallyTurning) && (!boardGroundDetect.isGrounded || in_grind)) { 
             boardGroundDetect.TurnBoardBackside();
             boardGroundDetect.alignmentThreshold = turn_tilt_threshold;
+            tweaked_y_rot = -1;
         } else if (Keyboard.current.eKey.wasReleasedThisFrame) {
             boardGroundDetect.ResetTurnBoardBackside();
+            tweaked_y_rot = 0;
         }
     }
 
