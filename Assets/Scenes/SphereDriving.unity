@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 1
   m_AmbientMode: 0
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
+  m_SkyboxMaterial: {fileID: 2100000, guid: 12ccb828343c3405fb94289774b51aad, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -145,7 +145,7 @@ Transform:
   m_GameObject: {fileID: 252344810}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0.003, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1245,6 +1245,22 @@ PrefabInstance:
       propertyPath: m_LocalPosition.z
       value: -4.6
       objectReference: {fileID: 0}
+    - target: {fileID: 7885164244523570666, guid: f079bd9238fcd0843b26e2e513ba7d5f, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 46609e541799a4d0880f95b8b7ba1ec6, type: 2}
+    - target: {fileID: 7885164244523570666, guid: f079bd9238fcd0843b26e2e513ba7d5f, type: 3}
+      propertyPath: 'm_Materials.Array.data[1]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 46609e541799a4d0880f95b8b7ba1ec6, type: 2}
+    - target: {fileID: 7885164244523570666, guid: f079bd9238fcd0843b26e2e513ba7d5f, type: 3}
+      propertyPath: 'm_Materials.Array.data[2]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 46609e541799a4d0880f95b8b7ba1ec6, type: 2}
+    - target: {fileID: 7885164244523570666, guid: f079bd9238fcd0843b26e2e513ba7d5f, type: 3}
+      propertyPath: 'm_Materials.Array.data[6]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 46609e541799a4d0880f95b8b7ba1ec6, type: 2}
     - target: {fileID: 8865052901241567397, guid: f079bd9238fcd0843b26e2e513ba7d5f, type: 3}
       propertyPath: m_Name
       value: Park
@@ -1288,6 +1304,10 @@ PrefabInstance:
     - target: {fileID: 8895779171234435954, guid: f079bd9238fcd0843b26e2e513ba7d5f, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9018062184582721157, guid: f079bd9238fcd0843b26e2e513ba7d5f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.16
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2075,7 +2095,7 @@ Transform:
   m_GameObject: {fileID: 1610310276}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.315, z: 0}
+  m_LocalPosition: {x: 0, y: -0.3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -2453,6 +2473,7 @@ MonoBehaviour:
   parkPrefabs:
   - {fileID: 8865052901241567397, guid: af5f84ac56808ef4aa0b0e98bd2c4421, type: 3}
   - {fileID: 8865052901241567397, guid: 6819c07f4c68b4c4cbdcb04fbe347595, type: 3}
+  - {fileID: 8865052901241567397, guid: 6dc655ea39a144bfe830372d624f746b, type: 3}
   skaterTransform: {fileID: 728332826}
   initialPark: {fileID: 1771928390}
   maxParkRenders: 4
