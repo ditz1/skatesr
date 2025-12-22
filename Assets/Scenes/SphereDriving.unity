@@ -2578,6 +2578,7 @@ MonoBehaviour:
   parkPrefabs:
   - {fileID: 8865052901241567397, guid: af5f84ac56808ef4aa0b0e98bd2c4421, type: 3}
   - {fileID: 8865052901241567397, guid: 6f8960b91f1574282b28e856d7fc7239, type: 3}
+  - {fileID: 8865052901241567397, guid: 2a30c7f293a144b348e26d26f0075c6b, type: 3}
   - {fileID: 8865052901241567397, guid: 6819c07f4c68b4c4cbdcb04fbe347595, type: 3}
   - {fileID: 8865052901241567397, guid: 6dc655ea39a144bfe830372d624f746b, type: 3}
   skaterTransform: {fileID: 728332826}
