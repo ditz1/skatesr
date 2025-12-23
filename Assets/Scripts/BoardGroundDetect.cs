@@ -13,7 +13,7 @@ public class BoardGroundDetect : MonoBehaviour
     public float alignmentThreshold = 0.3f;
     
     [Tooltip("How fast the board rotates to match ground")]
-    float rotationSpeed = 10f;
+    float rotationSpeed = 15f;
     
     [Tooltip("Layers to detect as ground")]
     LayerMask groundLayer = 1;
