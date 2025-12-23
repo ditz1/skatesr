@@ -48,6 +48,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -7635826562936255635, guid: b978ba91fe0a21e489322a77927744e6, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: fceecda3d0bf843a1ae0245d1003d93b, type: 2}
     - target: {fileID: 919132149155446097, guid: b978ba91fe0a21e489322a77927744e6, type: 3}
       propertyPath: m_Name
       value: handrail
