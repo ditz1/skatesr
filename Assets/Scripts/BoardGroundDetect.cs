@@ -7,6 +7,7 @@ public class BoardGroundDetect : MonoBehaviour
     public Transform tail;
     public TrickController trickController;
     public BoardController boardController;
+    public ParticleSystem grind_particles;
 
     [Header("Settings")]
     [Tooltip("Distance threshold to align with ground")]
@@ -48,6 +49,16 @@ public class BoardGroundDetect : MonoBehaviour
 
     void Update()
     {
+
+        if (boardController.in_grind) {
+            grind_particles.Play();
+            Debug.Log("Playing grind particles");
+        } else {
+            //grind_particles.Stop();
+            grind_particles.Stop();
+        }
+
+
         UpdateManualRotations();
         
         RaycastHit noseHit;

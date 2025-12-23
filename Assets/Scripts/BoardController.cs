@@ -89,6 +89,9 @@ public class BoardController : MonoBehaviour
     {
         if (!can_play) return;
 
+        
+        
+
         if (is_dead)
         {
             if (Keyboard.current.rKey.wasPressedThisFrame)
@@ -137,6 +140,8 @@ public class BoardController : MonoBehaviour
         } else {
             moveInput = 0;
         }
+
+       
 
 
         CheckForStoppageForward();
@@ -265,11 +270,14 @@ public class BoardController : MonoBehaviour
 
     void HandleGrind()
     {
+
         if (in_grind && grindStart != null && grindEnd != null)
         {
             // Completely freeze the rigidbody - we'll handle all movement manually
             rb.constraints = RigidbodyConstraints.FreezeAll;
             FollowGrindRail();
+
+            
         }
         else
         {
