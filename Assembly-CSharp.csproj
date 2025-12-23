@@ -50,6 +50,7 @@
     <Compile Include="Assets/Scripts/BoardGroundDetect.cs" />
     <Compile Include="Assets/Scripts/GrindDetect.cs" />
     <Compile Include="Assets/Scripts/HUDManager.cs" />
+    <Compile Include="Assets/Scripts/AudioManager.cs" />
     <Compile Include="Assets/Scripts/PlayerController.cs" />
     <Compile Include="Assets/Scripts/TrickController.cs" />
     <Compile Include="Assets/Scripts/BoardController.cs" />

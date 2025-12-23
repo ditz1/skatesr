@@ -5753,6 +5753,7 @@ GameObject:
   - component: {fileID: 509345744}
   - component: {fileID: 509345748}
   - component: {fileID: 509345747}
+  - component: {fileID: 509345749}
   m_Layer: 0
   m_Name: CinemachineCamera
   m_TagString: MainCamera
@@ -5932,6 +5933,14 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
+--- !u!81 &509345749
+AudioListener:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 509345742}
+  m_Enabled: 1
 --- !u!1 &575366523
 GameObject:
   m_ObjectHideFlags: 0
@@ -6326,6 +6335,8 @@ GameObject:
   - component: {fileID: 728332823}
   - component: {fileID: 728332827}
   - component: {fileID: 728332828}
+  - component: {fileID: 728332830}
+  - component: {fileID: 728332829}
   m_Layer: 0
   m_Name: TheSkater
   m_TagString: Untagged
@@ -6420,6 +6431,7 @@ MonoBehaviour:
   boardGroundDetect: {fileID: 1610310281}
   trickController: {fileID: 1610310282}
   playerController: {fileID: 1565172404}
+  audioManager: {fileID: 728332830}
   animator: {fileID: 1344292441}
   in_grind: 0
   isResettingRotation: 0
@@ -6429,6 +6441,140 @@ MonoBehaviour:
   is_dead: 0
   can_play: 0
   comboBufferFrames: 8
+--- !u!82 &728332829
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 728332822}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!114 &728332830
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 728332822}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 11fd2b32c0ba348d2b6548bb68ee5abb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AudioManager
+  sounds:
+  - name: grind
+    clip: {fileID: 8300000, guid: 67b2388bd484843b799fd1ed5c8b4cb4, type: 3}
+    volume: 0.47
+    pitch: 0.79
+    loop: 1
+    canBeInterrupted: 1
+  - name: pop
+    clip: {fileID: 8300000, guid: 09df5406f227946a3bae8570c48cf8f6, type: 3}
+    volume: 0.39
+    pitch: 0.8
+    loop: 0
+    canBeInterrupted: 0
+  - name: roll
+    clip: {fileID: 8300000, guid: 5f9bd62b39ec74f2abf100619884753a, type: 3}
+    volume: 0.39
+    pitch: 0.67
+    loop: 1
+    canBeInterrupted: 1
+  - name: land
+    clip: {fileID: 8300000, guid: 9f27d0b2a86d249cc905f485b22cd0a6, type: 3}
+    volume: 0.41
+    pitch: 0.82
+    loop: 0
+    canBeInterrupted: 0
 --- !u!1 &806823023
 GameObject:
   m_ObjectHideFlags: 0
@@ -7861,6 +8007,7 @@ MonoBehaviour:
   trickController: {fileID: 1610310282}
   boardController: {fileID: 728332828}
   grind_particles: {fileID: 428574997}
+  audioManager: {fileID: 728332830}
   alignmentThreshold: 0.5
   isGrounded: 0
   isManuallyTurning: 0

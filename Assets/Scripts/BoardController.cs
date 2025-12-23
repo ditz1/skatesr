@@ -18,6 +18,7 @@ public class BoardController : MonoBehaviour
     public BoardGroundDetect boardGroundDetect;
     public TrickController trickController;
     public PlayerController playerController;
+    public AudioManager audioManager;
     public Animator animator;
 
     public bool in_grind = false;
@@ -537,6 +538,8 @@ public class BoardController : MonoBehaviour
     {
 
         animator.Play("ollie");
+        audioManager.Play("pop");
+
         // If grinding, end the grind first so rigidbody can move
         if (in_grind)
         {
@@ -568,6 +571,9 @@ public class BoardController : MonoBehaviour
     }
 
     void PushForward() {
+        if (!in_grind && boardGroundDetect.isGrounded){
+            audioManager.Play("roll");
+        }
         rb.linearVelocity = new Vector3(rb.linearVelocity.x, rb.linearVelocity.y, moveSpeed);
     }
 

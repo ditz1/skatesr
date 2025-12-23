@@ -8,6 +8,7 @@ public class BoardGroundDetect : MonoBehaviour
     public TrickController trickController;
     public BoardController boardController;
     public ParticleSystem grind_particles;
+    public AudioManager audioManager;
 
     [Header("Settings")]
     [Tooltip("Distance threshold to align with ground")]
@@ -32,6 +33,8 @@ public class BoardGroundDetect : MonoBehaviour
     public bool isGrounded = false;
     public bool isManuallyTurning = false;
 
+    bool just_landed = false;
+
     float originalXRotation;
     float targetXRotation;
     float originalYRotation;
@@ -52,7 +55,8 @@ public class BoardGroundDetect : MonoBehaviour
 
         if (boardController.in_grind) {
             grind_particles.Play();
-            Debug.Log("Playing grind particles");
+            audioManager.Play("grind");
+            //Debug.Log("Playing grind particles");
         } else {
             //grind_particles.Stop();
             grind_particles.Stop();
@@ -60,7 +64,9 @@ public class BoardGroundDetect : MonoBehaviour
 
 
         UpdateManualRotations();
-        
+
+        CheckForLanding();
+
         RaycastHit noseHit;
         RaycastHit tailHit;
         
@@ -126,6 +132,20 @@ public class BoardGroundDetect : MonoBehaviour
             isGrounded = false;
         }
 
+    }
+
+    void CheckForLanding()
+    {
+        if (isGrounded && !just_landed)
+        {
+            just_landed = true;
+            //audioManager.Play("landing");
+            if (!boardController.in_grind) {
+                audioManager.Play("land");
+            }
+        } else if (!isGrounded && just_landed) {
+            just_landed = false;
+        }
     }
 
     void UpdateManualRotations()
