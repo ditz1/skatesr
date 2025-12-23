@@ -12,7 +12,7 @@ public class GrindDetect : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
-        Debug.Log("Collision with: " + collision.gameObject.name);
+        //Debug.Log("Collision with: " + collision.gameObject.name);
         boardController = collision.gameObject.GetComponent<BoardController>();
         
         if (boardController != null)
@@ -20,14 +20,14 @@ public class GrindDetect : MonoBehaviour
             // IMPORTANT: Check cooldown first
             if (boardController.IsGrindOnCooldown())
             {
-                Debug.Log("Grind on cooldown, ignoring collision");
+                //Debug.Log("Grind on cooldown, ignoring collision");
                 return;
             }
             
             // Check if we have valid grind points
             if (grind_start == null || grind_end == null)
             {
-                Debug.LogWarning("Need grind start and end points!");
+                //Debug.LogWarning("Need grind start and end points!");
                 return;
             }
             
@@ -54,7 +54,7 @@ public class GrindDetect : MonoBehaviour
             // IMPORTANT: Only end grind if they're actually grinding
             if (boardController.in_grind)
             {
-                Debug.Log("Collision exit - ending grind");
+                //Debug.Log("Collision exit - ending grind");
                 boardController.EndGrind();
             }
         }

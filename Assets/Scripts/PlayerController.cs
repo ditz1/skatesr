@@ -106,7 +106,7 @@ public class PlayerController : MonoBehaviour
             turn180AngleRemaining = 0f;
             isTurning180 = false;
         }
-        Debug.Log("player_transform rotation: " + player_transform.rotation.eulerAngles.y);
+        //Debug.Log("player_transform rotation: " + player_transform.rotation.eulerAngles.y);
 
     }
 

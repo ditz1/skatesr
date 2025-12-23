@@ -59,6 +59,8 @@ public class BoardController : MonoBehaviour
     Vector3 last_wall_hit;
     int wall_hit_frames = 20;
     int buffer_frames = 50;
+
+    public bool can_play = false;
     
 
     // Combo input buffer
@@ -85,6 +87,8 @@ public class BoardController : MonoBehaviour
 
     void Update()
     {
+        if (!can_play) return;
+
         if (is_dead)
         {
             if (Keyboard.current.rKey.wasPressedThisFrame)

@@ -20,7 +20,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: test_mat
+  m_Name: test_mat2
   m_Shader: {fileID: 4800000, guid: be891319084e9d147b09d89e80ce60e0, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -554,15 +554,15 @@ Material:
     - _simpleUI: 0
     - _utsTechnique: 0
     m_Colors:
-    - _1st_ShadeColor: {r: 0.20228954, g: 0.057404775, b: 0.2830189, a: 1}
+    - _1st_ShadeColor: {r: 0.07831969, g: 0.3018868, b: 0.27439904, a: 1}
     - _2nd_ShadeColor: {r: 0.09999997, g: 0.09999997, b: 0.09999997, a: 1}
     - _AngelRingMaskColor: {r: 0, g: 1, b: 0, a: 1}
     - _AngelRing_Color: {r: 1, g: 1, b: 1, a: 1}
     - _Ap_RimLightColor: {r: 1, g: 1, b: 1, a: 1}
-    - _BaseColor: {r: 0.5127329, g: 0.17888929, b: 0.5660378, a: 1}
+    - _BaseColor: {r: 0.34901962, g: 0.6901961, b: 0.6464708, a: 1}
     - _BaseColorMap_MipInfo: {r: 0, g: 0, b: 0, a: 0}
     - _BaseColorMaskColor: {r: 1, g: 1, b: 1, a: 1}
-    - _Color: {r: 0.5127329, g: 0.17888924, b: 0.5660378, a: 1}
+    - _Color: {r: 0.3490196, g: 0.6901961, b: 0.6464707, a: 1}
     - _ColorShift: {r: 0, g: 0, b: 0, a: 1}
     - _DiffusionProfileAsset: {r: 0, g: 0, b: 0, a: 0}
     - _DirectionalLight_Color: {r: 1, g: 1, b: 1, a: 1}
