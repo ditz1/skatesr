@@ -55,6 +55,7 @@
     <Compile Include="Assets/Scripts/TrickController.cs" />
     <Compile Include="Assets/Scripts/BoardController.cs" />
     <Compile Include="Assets/Scripts/ParkManager.cs" />
+    <Compile Include="Assets/Scripts/TrickFootPattern.cs" />
     <Compile Include="Assets/Scripts/GameManager.cs" />
   </ItemGroup>
   <ItemGroup>

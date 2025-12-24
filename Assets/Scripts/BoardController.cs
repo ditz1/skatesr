@@ -408,7 +408,7 @@ public class BoardController : MonoBehaviour
         if (Keyboard.current.wKey.isPressed) {
             boardGroundDetect.RaiseNose();
             boardGroundDetect.alignmentThreshold = manual_tilt_threshold;
-            animator.Play("manual");
+            //animator.Play("manual");
             tweaked_x_rot = 1;
             in_manual = true;
         } else if (Keyboard.current.wKey.wasReleasedThisFrame) {
@@ -422,7 +422,7 @@ public class BoardController : MonoBehaviour
         if (Keyboard.current.sKey.isPressed) {
             boardGroundDetect.RaiseTail();
             boardGroundDetect.alignmentThreshold = manual_tilt_threshold;
-            animator.Play("nosemanual");
+            //animator.Play("nosemanual");
             tweaked_x_rot = -1;
             in_manual = true;
         } else if (Keyboard.current.sKey.wasReleasedThisFrame) {
@@ -513,31 +513,31 @@ public class BoardController : MonoBehaviour
         // Start single tricks when not performing any trick
         if (Keyboard.current.jKey.isPressed) {
             trickController.StartTrick(0); // kickflip
-            animator.Play("kickflip");
+            //animator.Play("kickflip");
         }
         else if (Keyboard.current.kKey.isPressed) {
             trickController.StartTrick(1); // shuvit
-            animator.Play("shuvit");
+            //animator.Play("shuvit");
         }
         else if (Keyboard.current.lKey.isPressed) {
             trickController.StartTrick(2); // heelflip
-            animator.Play("kickflip");
+            //animator.Play("kickflip");
         }
         // Backup single key options (U and I keys for direct combo access)
         else if (Keyboard.current.uKey.isPressed) {
             trickController.StartTrick(3); // varial kickflip
-            animator.Play("shuvit");
+            //animator.Play("shuvit");
         }
         else if (Keyboard.current.iKey.isPressed) {
             trickController.StartTrick(4); // varial heelflip
-            animator.Play("shuvit");
+            //animator.Play("shuvit");
         }
     }
 
     void Jump()
     {
 
-        animator.Play("ollie");
+        //animator.Play("ollie");
         audioManager.Play("pop");
 
         // If grinding, end the grind first so rigidbody can move

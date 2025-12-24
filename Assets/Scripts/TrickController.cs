@@ -25,6 +25,13 @@ public class TrickController : MonoBehaviour
     public Rigidbody board_rb;
     public BoardController boardController;
     
+    // IK Integration
+    public PlayerController playerController;
+    
+    // Manual and Grind patterns
+    private TrickFootPattern manualPattern;
+    private TrickFootPattern grindPattern;
+    
 
     void Update()
     {
@@ -61,6 +68,48 @@ public class TrickController : MonoBehaviour
         {
             EndTrickLine();
         }
+        
+        // Update IK for manual/grind states
+        UpdateStateBasedIK();
+    }
+    
+    void UpdateStateBasedIK()
+    {
+        if (playerController == null)
+            return;
+        
+        // Handle manual state
+        if (boardController.in_manual && !isPerformingTrick)
+        {
+            // Apply manual foot pattern
+            if (manualPattern == null)
+                manualPattern = new ManualPattern(false); // Regular manual
+            
+            float manualProgress = 0.5f; // Static position for now
+            Vector3 leftOffset = manualPattern.EvaluateLeftFoot(manualProgress);
+            Vector3 rightOffset = manualPattern.EvaluateRightFoot(manualProgress);
+            
+            playerController.AddFootOffset(leftOffset, rightOffset);
+        }
+        // Handle grind state
+        else if (boardController.in_grind && !isPerformingTrick)
+        {
+            // Apply grind foot pattern
+            if (grindPattern == null)
+                grindPattern = new GrindPattern(GrindPattern.GrindType.FiftyFifty);
+            
+            float grindProgress = 0.5f; // Static position for now
+            Vector3 leftOffset = grindPattern.EvaluateLeftFoot(grindProgress);
+            Vector3 rightOffset = grindPattern.EvaluateRightFoot(grindProgress);
+            
+            playerController.AddFootOffset(leftOffset, rightOffset);
+        }
+    }
+    
+    // Public method to get trick progress for IK system
+    public float GetTrickProgress()
+    {
+        return trickProgress;
     }
 
     public void StartTrick(int trickType)
@@ -68,7 +117,6 @@ public class TrickController : MonoBehaviour
         if (isPerformingTrick) {
             return;
         }
-
 
         has_landed_current_trick = false;
 
@@ -86,7 +134,6 @@ public class TrickController : MonoBehaviour
         startEulerAngles = transform.rotation.eulerAngles;
 
         SetTrickRotation(trickType);
-
     }
 
     void HandleLanding()
@@ -144,7 +191,6 @@ public class TrickController : MonoBehaviour
 
     public void UpgradeToCombo(int comboTrickType)
     {
-        
         // Reset the trick with new target
         currentTrick = comboTrickType;
         trickProgress = 0f;
@@ -152,7 +198,6 @@ public class TrickController : MonoBehaviour
         startEulerAngles = transform.rotation.eulerAngles;
         
         SetTrickRotation(comboTrickType);
-        
     }
 
     public bool IsInComboWindow(float comboWindowTime)
@@ -228,7 +273,6 @@ public class TrickController : MonoBehaviour
     }
 
     void Shuvit() {
-        // instead of always turning 180 degrees, to account for boardslide should
         targetEulerAngles = startEulerAngles + new Vector3(0, 180, 0);
     }
 
@@ -283,13 +327,6 @@ public class TrickController : MonoBehaviour
         }
     }
 
-    void HandleTrickMultiplier()
-    {
-
-    }
-
-
-
     void HandleRotation()
     {
         // Get the nearest base rotation (0° or 180°)
@@ -316,5 +353,16 @@ public class TrickController : MonoBehaviour
         Vector3 currentEuler = transform.rotation.eulerAngles;
         Quaternion targetRotation = Quaternion.Euler(currentEuler.x, targetY, currentEuler.z);
         transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 10f);
+    }
+    
+    // Methods to change manual/grind types
+    public void SetManualType(bool isNoseManual)
+    {
+        manualPattern = new ManualPattern(isNoseManual);
+    }
+    
+    public void SetGrindType(GrindPattern.GrindType grindType)
+    {
+        grindPattern = new GrindPattern(grindType);
     }
 }
