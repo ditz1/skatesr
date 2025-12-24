@@ -14,6 +14,8 @@ public class PlayerController : MonoBehaviour
     [Header("Board Foot Positions")]
     public Transform frontFootBoardTarget;  // Front foot position on board
     public Transform backFootBoardTarget;   // Back foot position on board
+    public Transform frontFootTarget_non_parent;  // Front foot position on ground
+    public Transform backFootTarget_non_parent;  // Back foot position on ground
     
     [Header("IK Settings")]
     [Range(0f, 1f)]
@@ -200,21 +202,27 @@ public class PlayerController : MonoBehaviour
         // Smoothly interpolate lift amount based on trick state
         float targetLift = isPerformingTrick ? 2f : 0f;
         currentLiftAmount = Mathf.Lerp(currentLiftAmount, targetLift, Time.deltaTime * liftTransitionSpeed);
+
+        Transform leftFootTarget, rightFootTarget;
+
         
         if (isPerformingTrick)
         {
+            leftFootTarget = frontFootTarget_non_parent;
+            rightFootTarget = backFootTarget_non_parent;
             ikWeight = 0.8f;
             UpdateTrickFootOffsets();
         }
         else
         {
+            leftFootTarget = frontFootBoardTarget;
+            rightFootTarget = backFootBoardTarget;
             ikWeight = 1f;
             leftFootOffset = Vector3.Lerp(leftFootOffset, Vector3.zero, Time.deltaTime * 10f);
             rightFootOffset = Vector3.Lerp(rightFootOffset, Vector3.zero, Time.deltaTime * 10f);
         }
         
         // Assign targets based on board flip state
-        Transform leftFootTarget, rightFootTarget;
         Vector3 leftOffset, rightOffset;
         
         if (isBoardFlipped)
@@ -360,14 +368,14 @@ public class PlayerController : MonoBehaviour
         if (frontFootBoardTarget != null)
         {
             Gizmos.color = new Color(0f, 1f, 0f, 0.7f); // Green for front
-            Gizmos.DrawWireSphere(frontFootBoardTarget.position, 0.03f);
+            Gizmos.DrawWireSphere(frontFootBoardTarget.position, 0.08f);
             Gizmos.DrawRay(frontFootBoardTarget.position, frontFootBoardTarget.forward * 0.08f);
         }
         
         if (backFootBoardTarget != null)
         {
             Gizmos.color = new Color(1f, 1f, 0f, 0.7f); // Yellow for back
-            Gizmos.DrawWireSphere(backFootBoardTarget.position, 0.03f);
+            Gizmos.DrawWireSphere(backFootBoardTarget.position, 0.08f);
             Gizmos.DrawRay(backFootBoardTarget.position, backFootBoardTarget.forward * 0.08f);
         }
         

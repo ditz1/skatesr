@@ -31,6 +31,8 @@ public class TrickController : MonoBehaviour
     // Manual and Grind patterns
     private TrickFootPattern manualPattern;
     private TrickFootPattern grindPattern;
+
+    public Transform board_transform;
     
 
     void Update()
