@@ -211,12 +211,6 @@ public class PlayerController : MonoBehaviour
         float targetLift = performingTrick ? 1f : 0f;
         currentLiftAmount = Mathf.Lerp(currentLiftAmount, targetLift, Time.deltaTime * liftTransitionSpeed);
 
-        // if (isBoardFlipped)
-        // {
-        //     Transform tmp = frontFootBoardTarget;
-        //     frontFootBoardTarget = backFootBoardTarget;
-        //     backFootBoardTarget = tmp;
-        // }
         // Pick the base targets for the current state
         Transform leftTarget = performingTrick ? frontFootTarget_non_parent : frontFootBoardTarget;
         Transform rightTarget = performingTrick ? backFootTarget_non_parent : backFootBoardTarget;
