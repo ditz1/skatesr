@@ -398,7 +398,7 @@ MonoBehaviour:
   debugIK: 1
   enableIK: 1
   trickLiftHeight: 0.08
-  liftTransitionSpeed: 8
+  liftTransitionSpeed: 3
 --- !u!82 &6646307718441099128
 AudioSource:
   m_ObjectHideFlags: 0
@@ -5436,7 +5436,7 @@ Transform:
   m_GameObject: {fileID: 5366878590692244884}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.08399999, z: 0.292}
+  m_LocalPosition: {x: 0, y: 0.076, z: 0.251}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5498,7 +5498,7 @@ Transform:
   m_GameObject: {fileID: 8528272055828022539}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.095, z: -0.302}
+  m_LocalPosition: {x: 0, y: 0.076000005, z: -0.343}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5619,7 +5619,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3685794629714621297, guid: 4aa61e70eb42f40ba8063cc552a0c21e, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: -0.078
       objectReference: {fileID: 0}
     - target: {fileID: 3685794629714621297, guid: 4aa61e70eb42f40ba8063cc552a0c21e, type: 3}
       propertyPath: m_LocalPosition.z

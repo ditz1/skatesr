@@ -198,15 +198,17 @@ public class PlayerController : MonoBehaviour
         bool isPerformingTrick = trickController != null && trickController.isPerformingTrick;
         
         // Smoothly interpolate lift amount based on trick state
-        float targetLift = isPerformingTrick ? 1f : 0f;
+        float targetLift = isPerformingTrick ? 2f : 0f;
         currentLiftAmount = Mathf.Lerp(currentLiftAmount, targetLift, Time.deltaTime * liftTransitionSpeed);
         
         if (isPerformingTrick)
         {
+            ikWeight = 0.8f;
             UpdateTrickFootOffsets();
         }
         else
         {
+            ikWeight = 1f;
             leftFootOffset = Vector3.Lerp(leftFootOffset, Vector3.zero, Time.deltaTime * 10f);
             rightFootOffset = Vector3.Lerp(rightFootOffset, Vector3.zero, Time.deltaTime * 10f);
         }
