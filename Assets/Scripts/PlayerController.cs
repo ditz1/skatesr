@@ -54,12 +54,14 @@ public class PlayerController : MonoBehaviour
     
     private Vector3 leftFootOffset;
     private Vector3 rightFootOffset;
+    private bool isIKMirrored = false;
     
     void Start()
     {
         originalRotation = transform.rotation;
         SetupIK();
         SetupDefaultFootTargets();
+        SyncIKMirrorWithScale();
     }
     
     void SetupIK()
@@ -172,6 +174,9 @@ public class PlayerController : MonoBehaviour
         Vector3 currentEuler = player_transform.rotation.eulerAngles;
         Quaternion targetRotation = Quaternion.Euler(currentEuler.x, facingYawOffset + targetYRotation, currentEuler.z);
         player_transform.rotation = Quaternion.Slerp(player_transform.rotation, targetRotation, Time.deltaTime * 10f);
+
+        // Keep IK pole directions in sync with mesh mirroring
+        SyncIKMirrorWithScale();
     }
     
     void LateUpdate()
@@ -185,7 +190,12 @@ public class PlayerController : MonoBehaviour
     
     void UpdateFootTargets()
     {
+        // Ensure we have the targets we need for the current state
         if (frontFootBoardTarget == null || backFootBoardTarget == null)
+            return;
+        
+        bool performingTrick = trickController != null && trickController.isPerformingTrick;
+        if (performingTrick && (frontFootTarget_non_parent == null || backFootTarget_non_parent == null))
             return;
         
         // Determine if board is flipped (roughly 180 degrees from start)
@@ -195,60 +205,80 @@ public class PlayerController : MonoBehaviour
         if (boardYRotation > 180f)
             boardYRotation -= 360f;
         
-        isBoardFlipped = Mathf.Abs(boardYRotation) > 90f;
-        
-        bool isPerformingTrick = trickController != null && trickController.isPerformingTrick;
+        isBoardFlipped = Mathf.Abs(boardYRotation) > 120f;
         
         // Smoothly interpolate lift amount based on trick state
-        float targetLift = isPerformingTrick ? 2f : 0f;
+        float targetLift = performingTrick ? 1f : 0f;
         currentLiftAmount = Mathf.Lerp(currentLiftAmount, targetLift, Time.deltaTime * liftTransitionSpeed);
 
-        Transform leftFootTarget, rightFootTarget;
+        // if (isBoardFlipped)
+        // {
+        //     Transform tmp = frontFootBoardTarget;
+        //     frontFootBoardTarget = backFootBoardTarget;
+        //     backFootBoardTarget = tmp;
+        // }
+        // Pick the base targets for the current state
+        Transform leftTarget = performingTrick ? frontFootTarget_non_parent : frontFootBoardTarget;
+        Transform rightTarget = performingTrick ? backFootTarget_non_parent : backFootBoardTarget;
 
-        
-        if (isPerformingTrick)
+
+        // Update IK weight and offsets per state
+        if (performingTrick)
         {
-            leftFootTarget = frontFootTarget_non_parent;
-            rightFootTarget = backFootTarget_non_parent;
             ikWeight = 0.8f;
             UpdateTrickFootOffsets();
         }
         else
         {
-            leftFootTarget = frontFootBoardTarget;
-            rightFootTarget = backFootBoardTarget;
             ikWeight = 1f;
             leftFootOffset = Vector3.Lerp(leftFootOffset, Vector3.zero, Time.deltaTime * 10f);
             rightFootOffset = Vector3.Lerp(rightFootOffset, Vector3.zero, Time.deltaTime * 10f);
         }
         
-        // Assign targets based on board flip state
-        Vector3 leftOffset, rightOffset;
+        // Prepare offsets for swap logic (keep offset with its target)
+        Vector3 leftOffset = leftFootOffset;
+        Vector3 rightOffset = rightFootOffset;
         
-        if (isBoardFlipped)
+        // Swap targets (and their offsets) when the board is flipped
+        if (isBoardFlipped & !performingTrick)
         {
-            leftFootTarget = backFootBoardTarget;
-            rightFootTarget = frontFootBoardTarget;
-            leftOffset = rightFootOffset;
-            rightOffset = leftFootOffset;
-        }
-        else
-        {
-            leftFootTarget = frontFootBoardTarget;
-            rightFootTarget = backFootBoardTarget;
-            leftOffset = leftFootOffset;
-            rightOffset = rightFootOffset;
+            (leftTarget, rightTarget) = (rightTarget, leftTarget);
+            (leftOffset, rightOffset) = (rightOffset, leftOffset);
         }
         
         // Apply the trick-specific offsets
-        Vector3 leftBasePos = leftFootTarget.position + leftFootTarget.TransformDirection(leftOffset);
-        Vector3 rightBasePos = rightFootTarget.position + rightFootTarget.TransformDirection(rightOffset);
+        Vector3 leftBasePos = leftTarget.position + leftTarget.TransformDirection(leftOffset);
+        Vector3 rightBasePos = rightTarget.position + rightTarget.TransformDirection(rightOffset);
         
         // Add vertical lift during tricks (world space up direction)
         Vector3 liftOffset = Vector3.up * (trickLiftHeight * currentLiftAmount);
         
         leftFootTargetPos = leftBasePos + liftOffset;
         rightFootTargetPos = rightBasePos + liftOffset;
+    }
+
+    void SyncIKMirrorWithScale()
+    {
+        if (skater_mesh_transform == null)
+            return;
+
+        bool mirrored = skater_mesh_transform.localScale.x < 0f;
+        if (mirrored == isIKMirrored)
+            return;
+
+        isIKMirrored = mirrored;
+        SetIKMirror(mirrored);
+    }
+
+    public void SetIKMirror(bool mirrored)
+    {
+        isIKMirrored = mirrored;
+
+        if (leftLegIK != null)
+            leftLegIK.SetPoleFlip(mirrored);
+
+        if (rightLegIK != null)
+            rightLegIK.SetPoleFlip(mirrored);
     }
     
     void UpdateTrickFootOffsets()
@@ -369,6 +399,7 @@ public class PlayerController : MonoBehaviour
         {
             Gizmos.color = new Color(0f, 1f, 0f, 0.7f); // Green for front
             Gizmos.DrawWireSphere(frontFootBoardTarget.position, 0.08f);
+            Gizmos.DrawWireSphere(frontFootTarget_non_parent.position, 0.04f);
             Gizmos.DrawRay(frontFootBoardTarget.position, frontFootBoardTarget.forward * 0.08f);
         }
         
@@ -376,6 +407,7 @@ public class PlayerController : MonoBehaviour
         {
             Gizmos.color = new Color(1f, 1f, 0f, 0.7f); // Yellow for back
             Gizmos.DrawWireSphere(backFootBoardTarget.position, 0.08f);
+            Gizmos.DrawWireSphere(backFootTarget_non_parent.position, 0.04f);
             Gizmos.DrawRay(backFootBoardTarget.position, backFootBoardTarget.forward * 0.08f);
         }
         
@@ -438,6 +470,7 @@ public class LegIK
     private Vector3 midAxis;
     
     private Vector3 defaultPoleDirection;
+    private float poleFlipSign = 1f;
     
     public LegIK(Transform root, Transform mid, Transform tip)
     {
@@ -461,6 +494,12 @@ public class LegIK
         
         if (defaultPoleDirection.sqrMagnitude < 0.01f)
             defaultPoleDirection = Vector3.Cross(rootToMidNorm, Vector3.up).normalized;
+    }
+
+    public void SetPoleFlip(bool mirrored)
+    {
+        // mirrored true means the character mesh is flipped on X, so flip the pole
+        poleFlipSign = mirrored ? -1f : 1f;
     }
     
     public void Solve(Vector3 targetPos, float weight)
@@ -521,7 +560,8 @@ public class LegIK
     Vector3 GetPoleDirection(Vector3 rootPos, Vector3 targetPos)
     {
         Vector3 toTarget = (targetPos - rootPos).normalized;
-        Vector3 polePlane = Vector3.ProjectOnPlane(defaultPoleDirection, toTarget);
+        Vector3 poleDir = defaultPoleDirection * poleFlipSign;
+        Vector3 polePlane = Vector3.ProjectOnPlane(poleDir, toTarget);
         
         if (polePlane.sqrMagnitude < 0.01f)
         {

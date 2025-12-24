@@ -36,10 +36,10 @@ public abstract class TrickFootPattern
 public class KickflipPattern : TrickFootPattern
 {
     private float popHeight = 0.15f;
-    private float flickDistance = 0.2f;
+    private float flickDistance = 0.5f;
     private float liftHeight = 0.3f;
     
-    public override Vector3 EvaluateLeftFoot(float progress)
+    public override Vector3 EvaluateRightFoot(float progress)
     {
         // Left foot is typically the front foot for regular stance
         // Slide up the board, then flick out
@@ -73,7 +73,7 @@ public class KickflipPattern : TrickFootPattern
         return offset;
     }
     
-    public override Vector3 EvaluateRightFoot(float progress)
+    public override Vector3 EvaluateLeftFoot(float progress)
     {
         // Right foot is typically the back foot for regular stance
         // Pop down, then lift up
@@ -102,10 +102,10 @@ public class KickflipPattern : TrickFootPattern
 public class HeelflipPattern : TrickFootPattern
 {
     private float popHeight = 0.15f;
-    private float flickDistance = 0.2f;
+    private float flickDistance = 0.5f;
     private float liftHeight = 0.3f;
     
-    public override Vector3 EvaluateLeftFoot(float progress)
+    public override Vector3 EvaluateRightFoot(float progress)
     {
         // Heelflip flicks in the opposite direction
         Vector3 offset = Vector3.zero;
@@ -134,7 +134,7 @@ public class HeelflipPattern : TrickFootPattern
         return offset;
     }
     
-    public override Vector3 EvaluateRightFoot(float progress)
+    public override Vector3 EvaluateLeftFoot(float progress)
     {
         // Same pop as kickflip
         Vector3 offset = Vector3.zero;
@@ -162,7 +162,7 @@ public class ShuvitPattern : TrickFootPattern
     private float scoopDistance = 0.25f;
     private float liftHeight = 0.25f;
     
-    public override Vector3 EvaluateLeftFoot(float progress)
+    public override Vector3 EvaluateRightFoot(float progress)
     {
         // Front foot stays more stable, just lifts
         Vector3 offset = Vector3.zero;
@@ -184,7 +184,7 @@ public class ShuvitPattern : TrickFootPattern
         return offset;
     }
     
-    public override Vector3 EvaluateRightFoot(float progress)
+    public override Vector3 EvaluateLeftFoot(float progress)
     {
         // Back foot scoops - this is the key shuvit movement
         return EvaluateShuvitBackFoot(progress);
@@ -336,7 +336,7 @@ public class GrindPattern : TrickFootPattern
         grindType = type;
     }
     
-    public override Vector3 EvaluateLeftFoot(float progress)
+    public override Vector3 EvaluateRightFoot(float progress)
     {
         Vector3 offset = Vector3.zero;
         
@@ -375,7 +375,7 @@ public class GrindPattern : TrickFootPattern
         return offset;
     }
     
-    public override Vector3 EvaluateRightFoot(float progress)
+    public override Vector3 EvaluateLeftFoot(float progress)
     {
         Vector3 offset = Vector3.zero;
         

@@ -245,9 +245,11 @@ public class BoardController : MonoBehaviour
         if (playerController.YawIsPositive()) {
             Vector3 scale = new Vector3(-1f, 1f, 1f);
             playerController.skater_mesh_transform.localScale = scale;
+            playerController.SetIKMirror(true);
         } else {
             Vector3 scale = new Vector3(1f, 1f, 1f);
             playerController.skater_mesh_transform.localScale = scale;
+            playerController.SetIKMirror(false);
         }
     }
 
