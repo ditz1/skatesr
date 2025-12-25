@@ -17,6 +17,7 @@ public class GameManager : MonoBehaviour
     private CinemachineFollow followComponent;
 
     public Button start_button;
+    public GameObject customize_panel;
     public GameObject score_bug;
 
     void Start()
@@ -60,6 +61,7 @@ public class GameManager : MonoBehaviour
         should_follow_player = true;
         boardController.can_play = true;
         start_button.gameObject.SetActive(false);
+        customize_panel.SetActive(false);
         score_bug.SetActive(true);
     }
 }
