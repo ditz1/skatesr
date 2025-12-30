@@ -43,6 +43,16 @@ public class OutfitManager : MonoBehaviour
     int foot_index;
     int board_index;
 
+    [Header("Crumble Ragdoll Settings")]
+    float crumbleForwardImpulse = 5f;
+    float crumbleUpwardImpulse = 2f;
+    float crumbleRandomImpulse = 0.1f;
+    float crumbleTorqueImpulse = 0.2f;
+    float crumblePieceMass = 20.35f;
+
+    bool isCrumbling = false;
+    List<OutfitPieceState> activeCrumblePieces = new List<OutfitPieceState>();
+
     void Start()
     {
         head_outfits = CollectChildOutfits(head_wrapper);
@@ -637,5 +647,206 @@ public class OutfitManager : MonoBehaviour
         {
             outfit.SetActive(isActive);
         }
+    }
+
+    void EnsureAllOutfitCaches()
+    {
+        EnsureOutfits(ref head_outfits, head_wrapper, "head");
+        EnsureOutfits(ref body_outfits, body_wrapper, "body");
+        EnsureOutfits(ref waist_outfits, waist_wrapper, "waist");
+        EnsurePairedOutfits(ref left_arm_outfits, left_arm_wrapper, ref right_arm_outfits, right_arm_wrapper, "arms");
+        EnsurePairedOutfits(ref left_thigh_outfits, left_thigh_wrapper, ref right_thigh_outfits, right_thigh_wrapper, "thighs");
+        EnsurePairedOutfits(ref left_shin_outfits, left_shin_wrapper, ref right_shin_outfits, right_shin_wrapper, "shins");
+        EnsurePairedOutfits(ref left_foot_outfits, left_foot_wrapper, ref right_foot_outfits, right_foot_wrapper, "feet");
+        EnsureOutfits(ref board_outfits, board_wrapper, "board");
+    }
+
+    List<GameObject> GatherActiveOutfitPieces()
+    {
+        List<GameObject> activePieces = new List<GameObject>();
+
+        AddActiveOutfits(head_outfits, activePieces);
+        AddActiveOutfits(body_outfits, activePieces);
+        AddActiveOutfits(waist_outfits, activePieces);
+
+        AddActiveOutfits(left_arm_outfits, activePieces);
+        AddActiveOutfits(right_arm_outfits, activePieces);
+
+        AddActiveOutfits(left_thigh_outfits, activePieces);
+        AddActiveOutfits(right_thigh_outfits, activePieces);
+
+        AddActiveOutfits(left_shin_outfits, activePieces);
+        AddActiveOutfits(right_shin_outfits, activePieces);
+
+        AddActiveOutfits(left_foot_outfits, activePieces);
+        AddActiveOutfits(right_foot_outfits, activePieces);
+
+        AddActiveOutfits(board_outfits, activePieces);
+
+        return activePieces;
+    }
+
+    void AddActiveOutfits(GameObject[] outfits, List<GameObject> buffer)
+    {
+        if (outfits == null || buffer == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < outfits.Length; i++)
+        {
+            GameObject go = outfits[i];
+            if (go != null && go.activeSelf && go.activeInHierarchy)
+            {
+                buffer.Add(go);
+            }
+        }
+    }
+
+    public void TriggerCrumbleRagdoll(Vector3 slamVelocity, Transform forwardReference)
+    {
+        EnsureAllOutfitCaches();
+
+        if (isCrumbling)
+        {
+            return;
+        }
+
+        activeCrumblePieces.Clear();
+
+        List<GameObject> pieces = GatherActiveOutfitPieces();
+        if (pieces.Count == 0)
+        {
+            return;
+        }
+
+        isCrumbling = true;
+
+        foreach (GameObject go in pieces)
+        {
+            if (go == null)
+            {
+                continue;
+            }
+
+            Transform t = go.transform;
+
+            OutfitPieceState state = new OutfitPieceState
+            {
+                transform = t,
+                originalParent = t.parent,
+                localPosition = t.localPosition,
+                localRotation = t.localRotation,
+                localScale = t.localScale,
+                wasActive = go.activeSelf
+            };
+
+            activeCrumblePieces.Add(state);
+
+            // Detach before adding physics so we avoid nested rigidbody constraints
+            t.SetParent(null, true);
+
+            Rigidbody rb = go.GetComponent<Rigidbody>();
+            if (rb == null)
+            {
+                rb = go.AddComponent<Rigidbody>();
+                state.addedRigidbody = true;
+            }
+
+            rb.mass = crumblePieceMass;
+            rb.interpolation = RigidbodyInterpolation.Interpolate;
+            rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+
+            BoxCollider box = go.GetComponent<BoxCollider>();
+            if (box == null)
+            {
+                box = go.AddComponent<BoxCollider>();
+                state.addedCollider = true;
+            }
+            else
+            {
+                box.enabled = true;
+            }
+
+            Vector3 forwardForce = forwardReference != null
+                ? forwardReference.forward * crumbleForwardImpulse
+                : Vector3.forward * crumbleForwardImpulse;
+
+            Vector3 force = slamVelocity + forwardForce + (Vector3.up * crumbleUpwardImpulse) + (Random.insideUnitSphere * crumbleRandomImpulse);
+
+            rb.AddForce(force, ForceMode.Impulse);
+            rb.AddTorque(Random.insideUnitSphere * crumbleTorqueImpulse, ForceMode.Impulse);
+        }
+    }
+
+    public void ResetCrumbleRagdoll()
+    {
+        if (activeCrumblePieces.Count == 0)
+        {
+            isCrumbling = false;
+            return;
+        }
+
+        for (int i = 0; i < activeCrumblePieces.Count; i++)
+        {
+            OutfitPieceState state = activeCrumblePieces[i];
+            if (state == null || state.transform == null)
+            {
+                continue;
+            }
+
+            Transform t = state.transform;
+            GameObject go = t.gameObject;
+
+            Rigidbody rb = go.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+
+                if (state.addedRigidbody)
+                {
+                    Destroy(rb);
+                }
+                else
+                {
+                    rb.isKinematic = true;
+                    rb.detectCollisions = false;
+                }
+            }
+
+            BoxCollider box = go.GetComponent<BoxCollider>();
+            if (box != null && state.addedCollider)
+            {
+                Destroy(box);
+            }
+
+            t.SetParent(state.originalParent, false);
+            t.localPosition = state.localPosition;
+            t.localRotation = state.localRotation;
+            t.localScale = state.localScale;
+
+            if (state.wasActive && !go.activeSelf)
+            {
+                go.SetActive(true);
+            }
+        }
+
+        activeCrumblePieces.Clear();
+        isCrumbling = false;
+    }
+
+    class OutfitPieceState
+    {
+        public Transform transform;
+        public Transform originalParent;
+        public Vector3 localPosition;
+        public Quaternion localRotation;
+        public Vector3 localScale;
+        public bool wasActive;
+        public bool addedRigidbody;
+        public bool addedCollider;
     }
 }

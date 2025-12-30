@@ -57,6 +57,7 @@
     <Compile Include="Assets/Scripts/OutfitManager.cs" />
     <Compile Include="Assets/Scripts/ParkManager.cs" />
     <Compile Include="Assets/Scripts/TrickFootPattern.cs" />
+    <Compile Include="Assets/Scripts/DeathObstacle.cs" />
     <Compile Include="Assets/Scripts/GameManager.cs" />
   </ItemGroup>
   <ItemGroup>

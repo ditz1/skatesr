@@ -63,6 +63,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: bde3b85eaec6f486fb49ed77a402de38, type: 3}
       insertIndex: -1
       addedObject: {fileID: 4500771204140928326}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: bde3b85eaec6f486fb49ed77a402de38, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5520252922507773084}
   m_SourcePrefab: {fileID: 100100000, guid: bde3b85eaec6f486fb49ed77a402de38, type: 3}
 --- !u!1 &5076077693668307625 stripped
 GameObject:
@@ -88,5 +91,17 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.032047693, y: 0.07112528, z: 0.033521816}
-  m_Center: {x: 0, y: -0.0004537589, z: 0.0067609116}
+  m_Size: {x: 0.032047693, y: 0.07112528, z: 0.03340764}
+  m_Center: {x: 0, y: -0.00045375826, z: 0.00670382}
+--- !u!114 &5520252922507773084
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5076077693668307625}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cac7433b426904b97a650829bfc56957, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeathObstacle

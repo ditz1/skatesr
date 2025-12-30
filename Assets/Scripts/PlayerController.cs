@@ -8,6 +8,7 @@ public class PlayerController : MonoBehaviour
     public Transform player_transform;
     public Transform skater_mesh_transform;
     public Transform board_transform;
+    public BoardGroundDetect boardGroundDetect;
     public GameObject metarig;
     public TrickController trickController;
     
@@ -29,15 +30,22 @@ public class PlayerController : MonoBehaviour
     
     private float currentLiftAmount = 0f;  // Current lift interpolation (0-1)
     
-    // Track which foot goes to which target based on board rotation
+    // Track which foot goes to which target (data-driven, not rotation-based)
     private bool isBoardFlipped = false;
+    private bool useFlippedTargets = false; // when true, swap feet targets
     
     [Header("Rotation Settings")]
     private Quaternion originalRotation;
-    private float max_rotation = 35f;
+    private float max_rotation = 15f;
     private float targetYRotation = 0f;
     private float baseYRotation = 0f;
     private float facingYawOffset = 0f;
+    
+    [Header("IK Timing Settings")]
+    public float boardSpinSettleThreshold = 1.5f; // angular velocity magnitude to consider spinning
+    public float postTrickSettleTime = 0.2f;      // extra time to keep feet up after trick/spin
+    private float settleHoldTimer = 0f;
+    private bool wasPerformingTrick = false;
     
     [Header("Jump Charge Settings")]
     public float jumpCrouchOffset = 0.2f;
@@ -61,6 +69,10 @@ public class PlayerController : MonoBehaviour
     private Vector3 leftFootOffset;
     private Vector3 rightFootOffset;
     private bool isIKMirrored = false;
+    
+    [Header("Debug/Diagnostics")]
+    public bool debugLegCrossing = false;
+    private bool legsAreCrossed = false;
     
     void Start()
     {
@@ -200,6 +212,7 @@ public class PlayerController : MonoBehaviour
         
         UpdateFootTargets();
         ApplyIK();
+        DetectLegCrossing();
     }
     
     void UpdateFootTargets()
@@ -209,25 +222,64 @@ public class PlayerController : MonoBehaviour
             return;
         
         bool performingTrick = trickController != null && trickController.isPerformingTrick;
-        if (performingTrick && (frontFootTarget_non_parent == null || backFootTarget_non_parent == null))
+        bool boardSpinning = board_rb != null && board_rb.angularVelocity.sqrMagnitude > (boardSpinSettleThreshold * boardSpinSettleThreshold);
+        bool inManual = trickController != null &&
+                        trickController.boardController != null &&
+                        trickController.boardController.in_manual;
+        
+        // When we finish a trick, keep feet off the board briefly to avoid crossing as the board settles
+        if (!performingTrick && wasPerformingTrick)
+        {
+            settleHoldTimer = postTrickSettleTime;
+        }
+        
+        // Extend hold while the board is still spinning
+        if (boardSpinning)
+        {
+            settleHoldTimer = Mathf.Max(settleHoldTimer, postTrickSettleTime);
+        }
+        else
+        {
+            settleHoldTimer = Mathf.Max(0f, settleHoldTimer - Time.deltaTime);
+        }
+        
+        bool keepFeetOffBoard = performingTrick || boardSpinning || settleHoldTimer > 0f;
+
+        // Force feet to stay planted during manuals/nose manuals
+        if (inManual && !performingTrick)
+        {
+            boardSpinning = false;
+            settleHoldTimer = 0f;
+            keepFeetOffBoard = false;
+        }
+        
+        if (keepFeetOffBoard && (frontFootTarget_non_parent == null || backFootTarget_non_parent == null))
             return;
         
-        // Determine if board is flipped (roughly 180 degrees from start)
-        float boardYRotation = board_transform.localEulerAngles.y;
-        
-        // Normalize to -180 to 180
-        if (boardYRotation > 180f)
-            boardYRotation -= 360f;
-        
-        isBoardFlipped = Mathf.Abs(boardYRotation) > 120f;
+        // Only allow swapping feet when the board is stable and feet are allowed to reattach
+        bool allowSwap = !keepFeetOffBoard && !boardSpinning && settleHoldTimer <= 0f;
+        if (allowSwap && leftLegIK != null && rightLegIK != null &&
+            leftLegIK.tip != null && rightLegIK.tip != null)
+        {
+            float leftToFront = Vector3.Distance(leftLegIK.tip.position, frontFootBoardTarget.position);
+            float leftToBack = Vector3.Distance(leftLegIK.tip.position, backFootBoardTarget.position);
+            float rightToFront = Vector3.Distance(rightLegIK.tip.position, frontFootBoardTarget.position);
+            float rightToBack = Vector3.Distance(rightLegIK.tip.position, backFootBoardTarget.position);
+            
+            float normalCost = leftToFront + rightToBack;
+            float swappedCost = leftToBack + rightToFront;
+            
+            useFlippedTargets = swappedCost < normalCost;
+            isBoardFlipped = useFlippedTargets; // keep legacy flag for gizmo display
+        }
         
         // Smoothly interpolate lift amount based on trick state
-        float targetLift = performingTrick ? 1f : 0f;
+        float targetLift = keepFeetOffBoard ? 1f : 0f;
         currentLiftAmount = Mathf.Lerp(currentLiftAmount, targetLift, Time.deltaTime * liftTransitionSpeed);
 
         // Pick the base targets for the current state
-        Transform leftTarget = performingTrick ? frontFootTarget_non_parent : frontFootBoardTarget;
-        Transform rightTarget = performingTrick ? backFootTarget_non_parent : backFootBoardTarget;
+        Transform leftTarget = keepFeetOffBoard ? frontFootTarget_non_parent : frontFootBoardTarget;
+        Transform rightTarget = keepFeetOffBoard ? backFootTarget_non_parent : backFootBoardTarget;
 
 
         // Update IK weight and offsets per state
@@ -248,7 +300,7 @@ public class PlayerController : MonoBehaviour
         Vector3 rightOffset = rightFootOffset;
         
         // Swap targets (and their offsets) when the board is flipped
-        if (isBoardFlipped & !performingTrick)
+        if (useFlippedTargets && !keepFeetOffBoard)
         {
             (leftTarget, rightTarget) = (rightTarget, leftTarget);
             (leftOffset, rightOffset) = (rightOffset, leftOffset);
@@ -257,12 +309,36 @@ public class PlayerController : MonoBehaviour
         // Apply the trick-specific offsets
         Vector3 leftBasePos = leftTarget.position + leftTarget.TransformDirection(leftOffset);
         Vector3 rightBasePos = rightTarget.position + rightTarget.TransformDirection(rightOffset);
+
+        // Snap foot targets to the deck plane so they stay on the board when nose/tail are raised
+        if (boardGroundDetect != null && boardGroundDetect.nose != null && boardGroundDetect.tail != null)
+        {
+            leftBasePos = ProjectOntoDeckPlane(leftBasePos);
+            rightBasePos = ProjectOntoDeckPlane(rightBasePos);
+        }
         
         // Add vertical lift during tricks (world space up direction)
         Vector3 liftOffset = Vector3.up * (trickLiftHeight * currentLiftAmount);
         
         leftFootTargetPos = leftBasePos + liftOffset;
         rightFootTargetPos = rightBasePos + liftOffset;
+        
+        wasPerformingTrick = performingTrick;
+    }
+
+    Vector3 ProjectOntoDeckPlane(Vector3 worldPos)
+    {
+        Vector3 nosePos = boardGroundDetect.nose.position;
+        Vector3 tailPos = boardGroundDetect.tail.position;
+
+        // Build a stable deck plane using nose->tail direction and board right vector
+        Vector3 deckForward = (nosePos - tailPos).normalized;
+        Vector3 deckRight = board_transform != null ? board_transform.right : Vector3.right;
+        Vector3 deckUp = Vector3.Cross(deckRight, deckForward).normalized;
+
+        // Project the point onto the plane defined by deckUp through the nose point
+        float distance = Vector3.Dot(worldPos - nosePos, deckUp);
+        return worldPos - deckUp * distance;
     }
 
     void SyncIKMirrorWithScale()
@@ -363,6 +439,39 @@ public class PlayerController : MonoBehaviour
         return Mathf.DeltaAngle(0f, t.localEulerAngles.y);
     }
 
+    void DetectLegCrossing()
+    {
+        if (!debugLegCrossing)
+            return;
+        
+        if (leftLegIK == null || rightLegIK == null)
+            return;
+        
+        if (leftLegIK.tip == null || rightLegIK.tip == null)
+            return;
+        
+        Transform refTransform = player_transform != null ? player_transform : transform;
+        
+        Vector3 leftLocal = refTransform.InverseTransformPoint(leftLegIK.tip.position);
+        Vector3 rightLocal = refTransform.InverseTransformPoint(rightLegIK.tip.position);
+        
+        // In our coordinate frame, left foot should stay to the left (negative X) of the right foot
+        bool crossed = leftLocal.x > rightLocal.x;
+        
+        if (crossed != legsAreCrossed)
+        {
+            legsAreCrossed = crossed;
+            if (crossed)
+            {
+                Debug.Log("legs are crossed");
+            }
+            else
+            {
+                Debug.Log("legs un-crossed");
+            }
+        }
+    }
+
     public bool YawIsPositive() {
         return GetSignedYaw(skater_mesh_transform) >= 0f;
     }
@@ -445,7 +554,7 @@ public class PlayerController : MonoBehaviour
         Gizmos.DrawWireSphere(rightFootTargetPos, 0.05f);
         
         // Draw lines from board targets to actual targets
-        if (isBoardFlipped)
+        if (useFlippedTargets)
         {
             // Show swapped connections
             if (backFootBoardTarget != null)

@@ -18,6 +18,7 @@ public class BoardController : MonoBehaviour
     public BoardGroundDetect boardGroundDetect;
     public TrickController trickController;
     public PlayerController playerController;
+    public OutfitManager outfitManager;
     public AudioManager audioManager;
     public Animator animator;
 
@@ -57,9 +58,12 @@ public class BoardController : MonoBehaviour
 
 
     public bool is_dead = false;
+    float hit_min_distance_check = 0.003f;
     Vector3 last_wall_hit;
-    int wall_hit_frames = 20;
-    int buffer_frames = 50;
+    int wall_hit_frames_max = 10;
+    int wall_hit_frames;
+    int buffer_frames_max = 50;
+    int buffer_frames;
 
     public bool can_play = false;
     
@@ -73,6 +77,7 @@ public class BoardController : MonoBehaviour
 
     void Start()
     {
+        wall_hit_frames = wall_hit_frames_max;
         rb = GetComponent<Rigidbody>();
         rb.useGravity = true;
         
@@ -601,11 +606,17 @@ public class BoardController : MonoBehaviour
 
     void RespawnPlayer()
     {
+        if (outfitManager != null)
+        {
+            outfitManager.ResetCrumbleRagdoll();
+        }
+
         // Move the player slightly forward and up to avoid obstacles
         float forwardOffset = 2.5f;
+        float x_offset = 2.5f;
         float heightOffset = 0.6f;
 
-        Vector3 respawnPosition = transform.position + (transform.forward * forwardOffset) + (Vector3.up * heightOffset);
+        Vector3 respawnPosition = transform.position + (transform.forward * forwardOffset) + (Vector3.up * heightOffset) + (Vector3.right * x_offset);
 
         in_grind = false;
         rb.constraints = RigidbodyConstraints.None;
@@ -615,8 +626,8 @@ public class BoardController : MonoBehaviour
         rb.linearVelocity = Vector3.zero;
 
         // Reset tracking used for stuck detection
-        wall_hit_frames = 50;
-        buffer_frames = 50;
+        wall_hit_frames = wall_hit_frames_max;
+        buffer_frames = buffer_frames_max;
         last_wall_hit = respawnPosition;
 
         is_dead = false;
@@ -634,14 +645,47 @@ public class BoardController : MonoBehaviour
         if (wall_hit_frames <= 0 && !in_grind) {
             // Check if player hasn't moved forward enough (stuck/hit wall)
             // If current z position is NOT significantly ahead of the old position, they're stuck
-            if ((transform.position.z - last_wall_hit.z) < 0.005f) {
-                is_dead = true;
+            if ((transform.position.z - last_wall_hit.z) < hit_min_distance_check) {
+                TriggerSlam();
                 Debug.Log("Player is stuck! Not moving forward enough.");
             }
             //Debug.Log("Player movement change: " + (transform.position.z - last_wall_hit.z));
 
-            wall_hit_frames = 50;
+            wall_hit_frames = wall_hit_frames_max;
             last_wall_hit = transform.position;
+        }
+    }
+
+    public void TriggerSlam()
+    {
+        Vector3 slamVelocity = rb != null ? rb.linearVelocity : Vector3.zero;
+        TriggerSlam(slamVelocity);
+    }
+
+    public void TriggerSlam(Vector3 slamVelocity)
+    {
+        if (is_dead)
+        {
+            return;
+        }
+
+        is_dead = true;
+
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            rb.constraints = RigidbodyConstraints.FreezeAll;
+        }
+
+        if (outfitManager != null)
+        {
+            outfitManager.TriggerCrumbleRagdoll(slamVelocity, transform);
+        }
+
+        if (trickController != null && trickController.hudManager != null)
+        {
+            trickController.hudManager.is_slammed = true;
         }
     }
 }
