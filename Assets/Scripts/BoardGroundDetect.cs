@@ -13,6 +13,10 @@ public class BoardGroundDetect : MonoBehaviour
     [Header("Settings")]
     [Tooltip("Distance threshold to align with ground")]
     public float alignmentThreshold = 0.3f;
+    [Tooltip("Extra distance added to ground rays to stay latched to ramps/lips")]
+    public float raycastBuffer = 0.1f;
+    [Tooltip("Cast an additional center ray to stabilize grounding on curves/ramps")]
+    public bool useCenterRay = true;
     
     [Tooltip("How fast the board rotates to match ground")]
     float rotationSpeed = 15f;
@@ -27,6 +31,16 @@ public class BoardGroundDetect : MonoBehaviour
     [Tooltip("Speed at which the board rotates to target angle")]
     float tiltSpeed = 5f;
     
+    [Header("Airborne Relax Settings")]
+    [Tooltip("Time to hold the last grounded pitch before relaxing")]
+    public float airborneHoldTime = 0.12f;
+    [Tooltip("Speed to relax pitch back toward target after hold")]
+    public float airborneRelaxSpeed = 1.25f;
+
+    [Header("Trick Ray Settings")]
+    [Tooltip("Keep rays world-down for this long after a trick ends")]
+    public float trickRayHoldTime = 0.2f;
+    
     [Header("Debug")]
     bool showDebugRays = true;
 
@@ -39,6 +53,10 @@ public class BoardGroundDetect : MonoBehaviour
     float targetXRotation;
     float originalYRotation;
     float targetYRotation;
+    float lastGroundedXRotation;
+    float airborneTimer = 0f;
+    float trickRayTimer = 0f;
+    bool wasTricking = false;
     
     void Start()
     {
@@ -48,6 +66,7 @@ public class BoardGroundDetect : MonoBehaviour
         targetXRotation = originalXRotation;
         originalYRotation = transform.localEulerAngles.y;
         targetYRotation = originalYRotation;
+        lastGroundedXRotation = originalXRotation;
     }
 
     void Update()
@@ -67,16 +86,40 @@ public class BoardGroundDetect : MonoBehaviour
 
         CheckForLanding();
 
+        bool wasGrounded = isGrounded;
+        bool isTricking = trickController != null && trickController.isPerformingTrick;
+
+        // Keep world-down rays for a short time after tricks to avoid mid-flip orientations
+        if (isTricking)
+        {
+            trickRayTimer = trickRayHoldTime;
+        }
+        else
+        {
+            trickRayTimer = Mathf.Max(0f, trickRayTimer - Time.deltaTime);
+        }
+        wasTricking = isTricking;
+
+        // During tricks the board spins; keep rays world-down to avoid erratic casts
+        Vector3 downDir = (isTricking || trickRayTimer > 0f) ? Vector3.down : -transform.up;
+        float rayLength = alignmentThreshold + raycastBuffer;
+
         RaycastHit noseHit;
         RaycastHit tailHit;
+        RaycastHit centerHit = new RaycastHit();
         
-        bool noseHitGround = Physics.Raycast(nose.position, Vector3.down, out noseHit, alignmentThreshold, groundLayer);
-        bool tailHitGround = Physics.Raycast(tail.position, Vector3.down, out tailHit, alignmentThreshold, groundLayer);
+        bool noseHitGround = Physics.Raycast(nose.position, downDir, out noseHit, rayLength, groundLayer);
+        bool tailHitGround = Physics.Raycast(tail.position, downDir, out tailHit, rayLength, groundLayer);
+        bool centerHitGround = useCenterRay && Physics.Raycast(transform.position, downDir, out centerHit, rayLength, groundLayer);
         
         if (showDebugRays)
         {
-            Debug.DrawRay(nose.position, Vector3.down * alignmentThreshold, noseHitGround ? Color.green : Color.red);
-            Debug.DrawRay(tail.position, Vector3.down * alignmentThreshold, tailHitGround ? Color.green : Color.red);
+            Debug.DrawRay(nose.position, downDir * rayLength, noseHitGround ? Color.green : Color.red);
+            Debug.DrawRay(tail.position, downDir * rayLength, tailHitGround ? Color.green : Color.red);
+            if (useCenterRay)
+            {
+                Debug.DrawRay(transform.position, downDir * rayLength, centerHitGround ? Color.green : Color.red);
+            }
         }
         
         
@@ -88,10 +131,11 @@ public class BoardGroundDetect : MonoBehaviour
         }
         
         
-        if (noseHitGround || tailHitGround)
+        if (noseHitGround || tailHitGround || centerHitGround)
         {
             isGrounded = true;
             trickController.isGrounded = true;
+            airborneTimer = 0f;
         
             // When landing normally (not grinding), reset the manual turning state
             if (isManuallyTurning && !boardController.in_grind)
@@ -102,14 +146,40 @@ public class BoardGroundDetect : MonoBehaviour
             // Don't apply ground rotation if manually turning (includes grinding)
             if (!isManuallyTurning)
             {
-                Vector3 groundNosePoint = noseHit.point;
-                Vector3 groundTailPoint = tailHit.point;
-        
-                Vector3 groundDirection = (groundNosePoint - groundTailPoint).normalized;
-        
-                Vector3 rightVector = Vector3.Cross(groundDirection, Vector3.up).normalized;
+                Vector3 groundDirection = transform.forward;
+                if (noseHitGround && tailHitGround)
+                {
+                    groundDirection = (noseHit.point - tailHit.point).normalized;
+                }
+                else if (noseHitGround)
+                {
+                    groundDirection = Vector3.ProjectOnPlane(transform.forward, noseHit.normal).normalized;
+                }
+                else if (tailHitGround)
+                {
+                    groundDirection = Vector3.ProjectOnPlane(transform.forward, tailHit.normal).normalized;
+                }
+
+                Vector3 averagedNormal = Vector3.zero;
+                if (noseHitGround) averagedNormal += noseHit.normal;
+                if (tailHitGround) averagedNormal += tailHit.normal;
+                if (centerHitGround) averagedNormal += centerHit.normal;
+                if (averagedNormal.sqrMagnitude < 0.0001f)
+                {
+                    averagedNormal = transform.up;
+                }
+                else
+                {
+                    averagedNormal.Normalize();
+                }
+
+                Vector3 rightVector = Vector3.Cross(groundDirection, averagedNormal).normalized;
+                if (rightVector.sqrMagnitude < 0.0001f)
+                {
+                    rightVector = transform.right;
+                }
                 Vector3 upVector = Vector3.Cross(rightVector, groundDirection).normalized;
-        
+
                 Quaternion targetRotation = Quaternion.LookRotation(groundDirection, upVector);
         
                 Vector3 currentEuler = transform.eulerAngles;
@@ -117,6 +187,11 @@ public class BoardGroundDetect : MonoBehaviour
                 targetRotation = Quaternion.Euler(targetEuler.x, currentEuler.y, targetEuler.z);
         
                 transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * rotationSpeed);
+                lastGroundedXRotation = transform.localEulerAngles.x;
+                if (boardController == null || !boardController.in_manual)
+                {
+                    targetXRotation = lastGroundedXRotation;
+                }
         
                 // Update originalYRotation to match where we landed
                 originalYRotation = transform.localEulerAngles.y;
@@ -130,6 +205,7 @@ public class BoardGroundDetect : MonoBehaviour
             }
         } else {
             isGrounded = false;
+            airborneTimer += Time.deltaTime;
         }
 
     }
@@ -151,9 +227,24 @@ public class BoardGroundDetect : MonoBehaviour
     void UpdateManualRotations()
     {
         Vector3 currentRotation = transform.localEulerAngles;
+        float desiredX = targetXRotation;
         
+        // Hold ramp-derived pitch briefly, then ease back toward target (usually flat)
+        if (!isGrounded)
+        {
+            if (airborneTimer < airborneHoldTime)
+            {
+                desiredX = lastGroundedXRotation;
+            }
+            else
+            {
+                float relaxT = Mathf.Clamp01((airborneTimer - airborneHoldTime) * airborneRelaxSpeed);
+                desiredX = Mathf.LerpAngle(lastGroundedXRotation, targetXRotation, relaxT);
+            }
+        }
+
         // Update X rotation (nose/tail)
-        float newXRotation = Mathf.LerpAngle(currentRotation.x, targetXRotation, Time.deltaTime * tiltSpeed);
+        float newXRotation = Mathf.LerpAngle(currentRotation.x, desiredX, Time.deltaTime * tiltSpeed);
         
         // Update Y rotation (frontside/backside) - only if manually turning
         float newYRotation = currentRotation.y;
