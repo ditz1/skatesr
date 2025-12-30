@@ -456,7 +456,18 @@ public class BoardController : MonoBehaviour
 
     void HandleJump()
     {
-        if (!boardGroundDetect.isGrounded && !in_grind) return;
+        if (!boardGroundDetect.isGrounded && !in_grind)
+        {
+            if (isChargingJump)
+            {
+                isChargingJump = false;
+                if (playerController != null)
+                {
+                    playerController.SetJumpCharging(false);
+                }
+            }
+            return;
+        }
         
         if (Keyboard.current.spaceKey.wasPressedThisFrame) {
             isChargingJump = true;
@@ -471,6 +482,11 @@ public class BoardController : MonoBehaviour
         if (Keyboard.current.spaceKey.wasReleasedThisFrame && isChargingJump) {            
             Jump();
             isChargingJump = false;
+        }
+        
+        if (playerController != null)
+        {
+            playerController.SetJumpCharging(isChargingJump);
         }
     }
 

@@ -39,6 +39,12 @@ public class PlayerController : MonoBehaviour
     private float baseYRotation = 0f;
     private float facingYawOffset = 0f;
     
+    [Header("Jump Charge Settings")]
+    public float jumpCrouchOffset = 0.2f;
+    public float jumpCrouchLerpSpeed = 12f;
+    private Vector3 playerBaseLocalPosition;
+    private bool isJumpCharging = false;
+    
     [Header("180 Turn")]
     private bool isTurning180 = false;
     private float turn180StartTime = 0f;
@@ -59,6 +65,12 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         originalRotation = transform.rotation;
+        
+        if (player_transform != null)
+        {
+            playerBaseLocalPosition = player_transform.localPosition;
+        }
+        
         SetupIK();
         SetupDefaultFootTargets();
         SyncIKMirrorWithScale();
@@ -152,6 +164,8 @@ public class PlayerController : MonoBehaviour
                 Time.deltaTime * 20f
             );
         }
+
+        UpdateJumpCrouch();
 
         if (isTurning180)
         {
@@ -324,6 +338,24 @@ public class PlayerController : MonoBehaviour
     {
         this.leftFootOffset = leftOffset;
         this.rightFootOffset = rightOffset;
+    }
+    
+    public void SetJumpCharging(bool charging)
+    {
+        isJumpCharging = charging;
+    }
+    
+    void UpdateJumpCrouch()
+    {
+        if (player_transform == null)
+            return;
+        
+        Vector3 targetLocalPos = playerBaseLocalPosition + (isJumpCharging ? Vector3.down * jumpCrouchOffset : Vector3.zero);
+        player_transform.localPosition = Vector3.Lerp(
+            player_transform.localPosition,
+            targetLocalPos,
+            Time.deltaTime * jumpCrouchLerpSpeed
+        );
     }
     
     float GetSignedYaw(Transform t)

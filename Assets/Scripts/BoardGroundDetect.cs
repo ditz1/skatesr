@@ -22,7 +22,7 @@ public class BoardGroundDetect : MonoBehaviour
 
     [Header("Manual Tilt Settings")]
     [Tooltip("Maximum rotation angle for manual tilt (in degrees)")]
-    float maxTiltAngle = 65f;
+    float maxTiltAngle = 45f;
     
     [Tooltip("Speed at which the board rotates to target angle")]
     float tiltSpeed = 5f;
