@@ -75,6 +75,10 @@ public class BoardController : MonoBehaviour
     
     private float comboBufferTime;
 
+    // Grind anchor selection
+    private BoardGroundDetect.GrindAnchor currentGrindAnchor = BoardGroundDetect.GrindAnchor.Center;
+    private Vector3 grindAnchorLocalOffset = Vector3.zero;
+
     void Start()
     {
         wall_hit_frames = wall_hit_frames_max;
@@ -316,14 +320,15 @@ public class BoardController : MonoBehaviour
         // Calculate position on the rail based on progress
         Vector3 newPosition = startPos + (railDirection * grindProgress);
 
-        // Apply y offset
-        newPosition += new Vector3(0, 0.5f, 0);
-
-        transform.position = Vector3.Lerp(transform.position, newPosition, grindSpeed * Time.deltaTime * 2.0f);
-    
         // Align board rotation with rail direction
         Quaternion targetRotation = Quaternion.LookRotation(railDirection);
+
+        // Offset the board so the chosen grind anchor stays on the rail line
+        Vector3 targetAnchorOffset = targetRotation * grindAnchorLocalOffset;
+        Vector3 targetBoardPos = newPosition + new Vector3(0, 0.5f, 0) - targetAnchorOffset;
+
         transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, grindAlignSpeed * Time.deltaTime);
+        transform.position = Vector3.Lerp(transform.position, targetBoardPos, grindSpeed * Time.deltaTime * 2.0f);
     }
 
     void QueueGrindType()
@@ -376,6 +381,28 @@ public class BoardController : MonoBehaviour
         grindStart = startPoint;
         grindEnd = endPoint;
 
+        // Decide which part of the board should anchor to the rail at start
+        currentGrindAnchor = BoardGroundDetect.GrindAnchor.Center;
+        grindAnchorLocalOffset = Vector3.zero;
+        if (boardGroundDetect != null)
+        {
+            currentGrindAnchor = boardGroundDetect.GetPreferredGrindAnchor();
+            switch (currentGrindAnchor)
+            {
+                case BoardGroundDetect.GrindAnchor.Nose:
+                    if (boardGroundDetect.nose != null)
+                        grindAnchorLocalOffset = boardGroundDetect.nose.localPosition;
+                    break;
+                case BoardGroundDetect.GrindAnchor.Tail:
+                    if (boardGroundDetect.tail != null)
+                        grindAnchorLocalOffset = boardGroundDetect.tail.localPosition;
+                    break;
+                default:
+                    grindAnchorLocalOffset = Vector3.zero;
+                    break;
+            }
+        }
+
         QueueGrindType();
     
         // Calculate initial progress along the rail based on current position
@@ -394,6 +421,8 @@ public class BoardController : MonoBehaviour
         in_grind = false;
         grindStart = null;
         grindEnd = null;
+        grindAnchorLocalOffset = Vector3.zero;
+        currentGrindAnchor = BoardGroundDetect.GrindAnchor.Center;
     
         // Unfreeze the rigidbody
         rb.constraints = RigidbodyConstraints.None;

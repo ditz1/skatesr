@@ -622,6 +622,11 @@ MonoBehaviour:
   grind_particles: {fileID: 6239400084285081475}
   audioManager: {fileID: 8869448045140080921}
   alignmentThreshold: 0.5
+  raycastBuffer: 0.1
+  useCenterRay: 1
+  airborneHoldTime: 0.12
+  airborneRelaxSpeed: 1.25
+  trickRayHoldTime: 0.2
   isGrounded: 0
   isManuallyTurning: 0
 --- !u!114 &4361064126188233789
@@ -6350,7 +6355,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4065978729189272011, guid: 4aa61e70eb42f40ba8063cc552a0c21e, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -6742,7 +6747,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6810916444925825723, guid: 637a56626af2f4a729614517fd3099f6, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -6891,6 +6896,10 @@ PrefabInstance:
     - target: {fileID: 4065978729189272011, guid: 4aa61e70eb42f40ba8063cc552a0c21e, type: 3}
       propertyPath: m_Name
       value: c_board
+      objectReference: {fileID: 0}
+    - target: {fileID: 4065978729189272011, guid: 4aa61e70eb42f40ba8063cc552a0c21e, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7344,6 +7353,10 @@ PrefabInstance:
     - target: {fileID: 2703867298060899639, guid: cff0a3b0b042b4ed6b4bfdc51e6f86f7, type: 3}
       propertyPath: m_Name
       value: b_skate_shoe
+      objectReference: {fileID: 0}
+    - target: {fileID: 2703867298060899639, guid: cff0a3b0b042b4ed6b4bfdc51e6f86f7, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3372563179187425165, guid: cff0a3b0b042b4ed6b4bfdc51e6f86f7, type: 3}
       propertyPath: m_LocalScale.x
@@ -8063,7 +8076,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6810916444925825723, guid: 637a56626af2f4a729614517fd3099f6, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8182,7 +8195,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3900298564488573383, guid: 5e6e9444d3e97421bb2e6486881233a4, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4425758935785335677, guid: 5e6e9444d3e97421bb2e6486881233a4, type: 3}
       propertyPath: m_LocalScale.x
@@ -8420,7 +8433,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3900298564488573383, guid: 5e6e9444d3e97421bb2e6486881233a4, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4425758935785335677, guid: 5e6e9444d3e97421bb2e6486881233a4, type: 3}
       propertyPath: m_LocalScale.x
@@ -8655,6 +8668,10 @@ PrefabInstance:
     - target: {fileID: 2703867298060899639, guid: cff0a3b0b042b4ed6b4bfdc51e6f86f7, type: 3}
       propertyPath: m_Name
       value: b_skate_shoe (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 2703867298060899639, guid: cff0a3b0b042b4ed6b4bfdc51e6f86f7, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3372563179187425165, guid: cff0a3b0b042b4ed6b4bfdc51e6f86f7, type: 3}
       propertyPath: m_LocalScale.x

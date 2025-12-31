@@ -73,8 +73,6 @@ public class OutfitManager : MonoBehaviour
 
         board_outfits = CollectChildOutfits(board_wrapper);
 
-        LogCollectedOutfits();
-
         head_index = InitializeOutfits(head_outfits, null);
         body_index = InitializeOutfits(body_outfits, null);
         waist_index = InitializeOutfits(waist_outfits, null);
@@ -187,34 +185,6 @@ public class OutfitManager : MonoBehaviour
         SwitchOutfit(board_outfits, null, ref board_index, -1);
     }
 
-    void LogCollectedOutfits()
-    {
-        Debug.Log($"[OutfitManager] Head: {BuildNameList(head_outfits)}");
-        Debug.Log($"[OutfitManager] Body: {BuildNameList(body_outfits)}");
-        Debug.Log($"[OutfitManager] Waist: {BuildNameList(waist_outfits)}");
-        Debug.Log($"[OutfitManager] Arms: L[{BuildNameList(left_arm_outfits)}] R[{BuildNameList(right_arm_outfits)}]");
-        Debug.Log($"[OutfitManager] Thighs: L[{BuildNameList(left_thigh_outfits)}] R[{BuildNameList(right_thigh_outfits)}]");
-        Debug.Log($"[OutfitManager] Shins: L[{BuildNameList(left_shin_outfits)}] R[{BuildNameList(right_shin_outfits)}]");
-        Debug.Log($"[OutfitManager] Feet: L[{BuildNameList(left_foot_outfits)}] R[{BuildNameList(right_foot_outfits)}]");
-        Debug.Log($"[OutfitManager] Board: {BuildNameList(board_outfits)}");
-    }
-
-    string BuildNameList(GameObject[] outfits)
-    {
-        if (outfits == null || outfits.Length == 0)
-        {
-            return "none";
-        }
-
-        List<string> names = new List<string>();
-        for (int i = 0; i < outfits.Length; i++)
-        {
-            names.Add(outfits[i] == null ? "null" : outfits[i].name);
-        }
-
-        return string.Join(", ", names);
-    }
-
     GameObject[] CollectChildOutfits(GameObject wrapper)
     {
         if (wrapper == null)
@@ -267,8 +237,6 @@ public class OutfitManager : MonoBehaviour
         SetActiveOnlyAll(primary, activeIndex);
         SetActiveOnlyAll(secondary, activeIndex);
 
-        Debug.Log($"[OutfitManager] InitializeOutfits -> activeIndex {activeIndex} | primary {BuildIndexName(primary, activeIndex)} | secondary {BuildIndexName(secondary, activeIndex)}");
-
         return activeIndex;
     }
 
@@ -278,8 +246,6 @@ public class OutfitManager : MonoBehaviour
         int secondaryLength = secondary?.Length ?? 0;
 
         int maxLength = Mathf.Max(primaryLength, secondaryLength);
-
-        Debug.Log($"[OutfitManager] MaxUsableLength -> primaryLen {primaryLength} secondaryLen {secondaryLength} maxLen {maxLength}");
 
         return maxLength;
     }
@@ -314,23 +280,17 @@ public class OutfitManager : MonoBehaviour
         {
             if (outfits[i] != null)
             {
-                bool shouldActivate = (i == indexToActivate);
-                Debug.Log($"[OutfitManager] SetActiveOnlyAll -> idx {i} name {outfits[i].name} setActive {shouldActivate}");
                 outfits[i].SetActive(i == indexToActivate);
             }
         }
-
-        LogActiveStates("after SetActiveOnlyAll", outfits);
     }
 
 
     void SwitchOutfit(GameObject[] primary, GameObject[] secondary, ref int currentIndex, int direction)
     {
         int maxLength = MaxUsableLength(primary, secondary);
-        Debug.Log($"[OutfitManager] SwitchOutfit -> maxLength {maxLength} | primary {BuildNameList(primary)} | secondary {BuildNameList(secondary)} | currentIndex {currentIndex} | direction {direction}");
         if (maxLength == 0)
         {
-            Debug.LogWarning("[OutfitManager] SwitchOutfit aborted because maxLength is 0.");
             return;
         }
 
@@ -349,23 +309,14 @@ public class OutfitManager : MonoBehaviour
 
             if (resolvedActive != currentIndex)
             {
-                Debug.Log($"[OutfitManager] SwitchOutfit -> syncing currentIndex from {currentIndex} to detected active {resolvedActive}");
                 currentIndex = resolvedActive;
             }
         }
 
-        LogActiveStates("before switch primary", primary);
-        LogActiveStates("before switch secondary", secondary);
-
         currentIndex = NormalizeIndex(currentIndex + direction, maxLength);
-
-        Debug.Log($"[OutfitManager] SwitchOutfit -> dir {direction} newIndex {currentIndex} | primary {BuildIndexName(primary, currentIndex)} | secondary {BuildIndexName(secondary, currentIndex)} | maxLen {maxLength}");
 
         SetActiveOnlyAll(primary, currentIndex);
         SetActiveOnlyAll(secondary, currentIndex);
-
-        LogActiveStates("after switch primary", primary);
-        LogActiveStates("after switch secondary", secondary);
     }
 
     void SwitchBodyWithArms(ref int currentIndex, int direction)
@@ -374,11 +325,8 @@ public class OutfitManager : MonoBehaviour
         int armLength = MaxUsableLength(left_arm_outfits, right_arm_outfits);
         int maxLength = ResolvePairLength(bodyLength, armLength);
 
-        Debug.Log($"[OutfitManager] SwitchBodyWithArms -> maxLength {maxLength} | body {BuildNameList(body_outfits)} | arms {BuildNameList(left_arm_outfits)} | currentIndex {currentIndex} | direction {direction}");
-
         if (maxLength == 0)
         {
-            Debug.LogWarning("[OutfitManager] SwitchBodyWithArms aborted because maxLength is 0.");
             return;
         }
 
@@ -394,27 +342,18 @@ public class OutfitManager : MonoBehaviour
 
         if (resolvedActive != -1 && resolvedActive != currentIndex)
         {
-            Debug.Log($"[OutfitManager] SwitchBodyWithArms -> syncing currentIndex from {currentIndex} to detected active {resolvedActive}");
             currentIndex = resolvedActive;
         }
-
-        LogActiveStates("before switch body", body_outfits);
-        LogActiveStates("before switch arms", left_arm_outfits);
 
         currentIndex = NormalizeIndex(currentIndex + direction, maxLength);
 
         int armIndex = NormalizeIndex(currentIndex, armLength == 0 ? 1 : armLength);
         arm_index = armIndex;
 
-        Debug.Log($"[OutfitManager] SwitchBodyWithArms -> dir {direction} newIndex {currentIndex} | armIndex {armIndex} | maxLen {maxLength}");
-
         SetActiveOnlyAll(body_outfits, currentIndex);
 
         SetActiveOnlyAll(left_arm_outfits, armIndex);
         SetActiveOnlyAll(right_arm_outfits, armIndex);
-
-        LogActiveStates("after switch body", body_outfits);
-        LogActiveStates("after switch arms", left_arm_outfits);
     }
 
     void SwitchLegs(ref int currentIndex, int direction)
@@ -426,11 +365,8 @@ public class OutfitManager : MonoBehaviour
         int legLength = ResolvePairLength(thighLength, shinLength);
         int maxLength = ResolvePairLength(legLength, waistLength);
 
-        Debug.Log($"[OutfitManager] SwitchLegs -> maxLength {maxLength} | thighs {BuildNameList(left_thigh_outfits)} | shins {BuildNameList(left_shin_outfits)} | waist {BuildNameList(waist_outfits)} | currentIndex {currentIndex} | direction {direction}");
-
         if (maxLength == 0)
         {
-            Debug.LogWarning("[OutfitManager] SwitchLegs aborted because maxLength is 0.");
             return;
         }
 
@@ -457,13 +393,8 @@ public class OutfitManager : MonoBehaviour
 
         if (resolvedActive != -1 && resolvedActive != currentIndex)
         {
-            Debug.Log($"[OutfitManager] SwitchLegs -> syncing currentIndex from {currentIndex} to detected active {resolvedActive}");
             currentIndex = resolvedActive;
         }
-
-        LogActiveStates("before switch thighs", left_thigh_outfits);
-        LogActiveStates("before switch shins", left_shin_outfits);
-        LogActiveStates("before switch waist", waist_outfits);
 
         currentIndex = NormalizeIndex(currentIndex + direction, maxLength);
 
@@ -472,8 +403,6 @@ public class OutfitManager : MonoBehaviour
         int waistIndex = NormalizeIndex(currentIndex, waistLength == 0 ? 1 : waistLength);
         waist_index = waistIndex;
 
-        Debug.Log($"[OutfitManager] SwitchLegs -> dir {direction} newIndex {currentIndex} | thighIndex {thighIndex} | shinIndex {shinIndex} | waistIndex {waistIndex} | maxLen {maxLength}");
-
         SetActiveOnlyAll(left_thigh_outfits, thighIndex);
         SetActiveOnlyAll(right_thigh_outfits, thighIndex);
 
@@ -481,10 +410,6 @@ public class OutfitManager : MonoBehaviour
         SetActiveOnlyAll(right_shin_outfits, shinIndex);
 
         SetActiveOnlyAll(waist_outfits, waistIndex);
-
-        LogActiveStates("after switch thighs", left_thigh_outfits);
-        LogActiveStates("after switch shins", left_shin_outfits);
-        LogActiveStates("after switch waist", waist_outfits);
     }
 
     int NormalizeIndex(int index, int maxLength)
@@ -502,37 +427,11 @@ public class OutfitManager : MonoBehaviour
         return index;
     }
 
-    void LogActiveStates(string label, GameObject[] outfits)
-    {
-        if (outfits == null)
-        {
-            Debug.Log($"[OutfitManager] {label}: none");
-            return;
-        }
-
-        List<string> states = new List<string>();
-        for (int i = 0; i < outfits.Length; i++)
-        {
-            var go = outfits[i];
-            if (go == null)
-            {
-                states.Add($"{i}: null");
-            }
-            else
-            {
-                states.Add($"{i}: {go.name} active={go.activeSelf}");
-            }
-        }
-
-        Debug.Log($"[OutfitManager] {label}: {string.Join(" | ", states)}");
-    }
-
     GameObject[] EnsureOutfits(ref GameObject[] outfits, GameObject wrapper, string label)
     {
         if (outfits == null || outfits.Length == 0)
         {
             outfits = CollectChildOutfits(wrapper);
-            Debug.Log($"[OutfitManager] EnsureOutfits ({label}) -> collected {outfits.Length} from {(wrapper == null ? "null" : wrapper.name)}");
         }
 
         return outfits;
@@ -618,21 +517,6 @@ public class OutfitManager : MonoBehaviour
 
         SetActiveOnlyAll(left_arm_outfits, arm_index);
         SetActiveOnlyAll(right_arm_outfits, arm_index);
-    }
-
-    string BuildIndexName(GameObject[] outfits, int index)
-    {
-        if (outfits == null)
-        {
-            return "none";
-        }
-
-        if (index < 0 || index >= outfits.Length)
-        {
-            return $"index {index} out of range (len {outfits.Length})";
-        }
-
-        return outfits[index] == null ? "null" : outfits[index].name;
     }
 
     void SetActive(GameObject[] outfits, int index, bool isActive)

@@ -46,6 +46,9 @@ public class BoardGroundDetect : MonoBehaviour
 
     public bool isGrounded = false;
     public bool isManuallyTurning = false;
+    public bool noseHitGroundLast = false;
+    public bool tailHitGroundLast = false;
+    public bool centerHitGroundLast = false;
 
     bool just_landed = false;
 
@@ -111,6 +114,10 @@ public class BoardGroundDetect : MonoBehaviour
         bool noseHitGround = Physics.Raycast(nose.position, downDir, out noseHit, rayLength, groundLayer);
         bool tailHitGround = Physics.Raycast(tail.position, downDir, out tailHit, rayLength, groundLayer);
         bool centerHitGround = useCenterRay && Physics.Raycast(transform.position, downDir, out centerHit, rayLength, groundLayer);
+
+        noseHitGroundLast = noseHitGround;
+        tailHitGroundLast = tailHitGround;
+        centerHitGroundLast = centerHitGround;
         
         if (showDebugRays)
         {
@@ -255,6 +262,23 @@ public class BoardGroundDetect : MonoBehaviour
         
         // Set both at once - no fighting!
         transform.localEulerAngles = new Vector3(newXRotation, newYRotation, currentRotation.z);
+    }
+
+    public enum GrindAnchor
+    {
+        Center,
+        Nose,
+        Tail
+    }
+
+    public GrindAnchor GetPreferredGrindAnchor()
+    {
+        // Single-point contact picks that anchor; otherwise center
+        if (tailHitGroundLast && !noseHitGroundLast && !centerHitGroundLast)
+            return GrindAnchor.Tail;
+        if (noseHitGroundLast && !tailHitGroundLast && !centerHitGroundLast)
+            return GrindAnchor.Nose;
+        return GrindAnchor.Center;
     }
 
     public void TurnBoardFrontside()
