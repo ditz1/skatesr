@@ -335,21 +335,19 @@ public class TrickController : MonoBehaviour
         float baseRotation = GetNearestBaseYRotation();
         float targetY;
         
-        if (board_rb.linearVelocity.x > 0.3f)
+        float turnFactor = 0f;
+        if (boardController != null)
         {
-            // Turning right
-            targetY = baseRotation + max_rotation;
-        }
-        else if (board_rb.linearVelocity.x < -0.3f)
-        {
-            // Turning left
-            targetY = baseRotation - max_rotation;
+            turnFactor = Mathf.Clamp(boardController.CurrentTurnInput, -1f, 1f);
         }
         else
         {
-            // Going straight - return to base rotation
-            targetY = baseRotation;
+            // Fallback to velocity-based inference if no controller
+            float vx = board_rb != null ? board_rb.linearVelocity.x : 0f;
+            turnFactor = vx > 0.3f ? 1f : (vx < -0.3f ? -1f : 0f);
         }
+
+        targetY = baseRotation + (max_rotation * turnFactor);
         
         // Smoothly rotate to target
         Vector3 currentEuler = transform.rotation.eulerAngles;

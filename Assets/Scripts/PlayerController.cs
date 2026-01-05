@@ -243,7 +243,7 @@ public class PlayerController : MonoBehaviour
             settleHoldTimer = Mathf.Max(0f, settleHoldTimer - Time.deltaTime);
         }
         
-        bool keepFeetOffBoard = performingTrick || boardSpinning || settleHoldTimer > 0f;
+        bool keepFeetOffBoard = performingTrick || (!inManual && (boardSpinning || settleHoldTimer > 0f));
 
         // Force feet to stay planted during manuals/nose manuals
         if (inManual && !performingTrick)
@@ -273,10 +273,6 @@ public class PlayerController : MonoBehaviour
             isBoardFlipped = useFlippedTargets; // keep legacy flag for gizmo display
         }
         
-        // Smoothly interpolate lift amount based on trick state
-        float targetLift = keepFeetOffBoard ? 1f : 0f;
-        currentLiftAmount = Mathf.Lerp(currentLiftAmount, targetLift, Time.deltaTime * liftTransitionSpeed);
-
         // Pick the base targets for the current state
         Transform leftTarget = keepFeetOffBoard ? frontFootTarget_non_parent : frontFootBoardTarget;
         Transform rightTarget = keepFeetOffBoard ? backFootTarget_non_parent : backFootBoardTarget;
@@ -291,8 +287,11 @@ public class PlayerController : MonoBehaviour
         else
         {
             ikWeight = 1f;
-            leftFootOffset = Vector3.Lerp(leftFootOffset, Vector3.zero, Time.deltaTime * 10f);
-            rightFootOffset = Vector3.Lerp(rightFootOffset, Vector3.zero, Time.deltaTime * 10f);
+            if (!inManual)
+            {
+                leftFootOffset = Vector3.Lerp(leftFootOffset, Vector3.zero, Time.deltaTime * 10f);
+                rightFootOffset = Vector3.Lerp(rightFootOffset, Vector3.zero, Time.deltaTime * 10f);
+            }
         }
         
         // Prepare offsets for swap logic (keep offset with its target)
@@ -318,6 +317,15 @@ public class PlayerController : MonoBehaviour
         }
         
         // Add vertical lift during tricks (world space up direction)
+        float targetLift = keepFeetOffBoard ? 1f : 0f;
+        currentLiftAmount = Mathf.Lerp(currentLiftAmount, targetLift, Time.deltaTime * liftTransitionSpeed);
+
+        // Prevent any trick lift while in manual so feet stay planted on deck tilt
+        if (inManual && !performingTrick)
+        {
+            currentLiftAmount = 0f;
+        }
+        
         Vector3 liftOffset = Vector3.up * (trickLiftHeight * currentLiftAmount);
         
         leftFootTargetPos = leftBasePos + liftOffset;
@@ -512,18 +520,25 @@ public class PlayerController : MonoBehaviour
 
     void CalculateBaseRotation()
     {
-        if (board_rb.linearVelocity.x > 0.1f)
+        float turnInput = 0f;
+        if (trickController != null && trickController.boardController != null)
         {
-            baseYRotation = max_rotation;
-        }
-        else if (board_rb.linearVelocity.x < -0.1f)
-        {
-            baseYRotation = -max_rotation;
+            turnInput = Mathf.Clamp(trickController.boardController.CurrentTurnInput, -1f, 1f);
         }
         else
         {
-            baseYRotation = 0f;
+            // Fallback to velocity-based inference
+            if (board_rb.linearVelocity.x > 0.1f)
+            {
+                turnInput = 1f;
+            }
+            else if (board_rb.linearVelocity.x < -0.1f)
+            {
+                turnInput = -1f;
+            }
         }
+
+        baseYRotation = max_rotation * turnInput;
     }
     
     void OnDrawGizmos()

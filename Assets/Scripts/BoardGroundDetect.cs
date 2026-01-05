@@ -49,6 +49,10 @@ public class BoardGroundDetect : MonoBehaviour
     public bool noseHitGroundLast = false;
     public bool tailHitGroundLast = false;
     public bool centerHitGroundLast = false;
+    
+    [Header("External Tilt")]
+    [Tooltip("Additional X tilt applied by external controllers (degrees)")]
+    public float externalXTilt = 0f;
 
     bool just_landed = false;
 
@@ -252,6 +256,7 @@ public class BoardGroundDetect : MonoBehaviour
 
         // Update X rotation (nose/tail)
         float newXRotation = Mathf.LerpAngle(currentRotation.x, desiredX, Time.deltaTime * tiltSpeed);
+        float finalXRotation = newXRotation + externalXTilt;
         
         // Update Y rotation (frontside/backside) - only if manually turning
         float newYRotation = currentRotation.y;
@@ -261,7 +266,7 @@ public class BoardGroundDetect : MonoBehaviour
         }
         
         // Set both at once - no fighting!
-        transform.localEulerAngles = new Vector3(newXRotation, newYRotation, currentRotation.z);
+        transform.localEulerAngles = new Vector3(finalXRotation, newYRotation, currentRotation.z);
     }
 
     public enum GrindAnchor

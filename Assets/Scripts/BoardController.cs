@@ -6,7 +6,12 @@ public class BoardController : MonoBehaviour
 {
     float moveSpeed = 5f;
     float turnSpeed = 4f;
-    int moveInput = 0;
+    float moveInput = 0f;
+    float currentTurnInput = 0f;
+    float turnAcceleration = 2.5f; // how quickly turn input ramps up
+    float turnDecay = 5f;          // how quickly turn input decays when released
+    float maxTurnInput = 1f;       // cap for turn input magnitude
+    public float CurrentTurnInput => currentTurnInput;
     private Rigidbody rb;
     // Jump variables
     float minJumpForce = 4.0f;
@@ -66,6 +71,8 @@ public class BoardController : MonoBehaviour
     int buffer_frames;
 
     public bool can_play = false;
+    float preStartZPosition;
+    bool preStartFrozen = false;
     
 
     // Combo input buffer
@@ -79,11 +86,20 @@ public class BoardController : MonoBehaviour
     private BoardGroundDetect.GrindAnchor currentGrindAnchor = BoardGroundDetect.GrindAnchor.Center;
     private Vector3 grindAnchorLocalOffset = Vector3.zero;
 
+    // Ollie tilt settings (manual rotation, no BoardGroundDetect helpers)
+    float ollieTiltUpThreshold = 1.4f;
+    float ollieLevelThreshold = 0.15f;
+    float ollieMaxTiltDegrees = 15f;
+    float ollieTiltUpSpeed = 4f;     // deg/sec while rising
+    float ollieTiltDownSpeed = 8f;  // deg/sec while leveling
+    float currentOllieTilt = 0f;
+
     void Start()
     {
         wall_hit_frames = wall_hit_frames_max;
         rb = GetComponent<Rigidbody>();
         rb.useGravity = true;
+        preStartZPosition = transform.position.z;
         
         // Convert frames to seconds (assuming 60fps)
         comboBufferTime = comboBufferFrames / 60f;
@@ -95,9 +111,60 @@ public class BoardController : MonoBehaviour
         }
     }
 
+    void UpdateTurnInput()
+    {
+        float desired = 0f;
+        if (Keyboard.current.aKey.isPressed) {
+            desired = -1f;
+        } else if (Keyboard.current.dKey.isPressed) {
+            desired = 1f;
+        }
+
+        if (Mathf.Abs(desired) > 0f)
+        {
+            currentTurnInput = Mathf.MoveTowards(currentTurnInput, desired * maxTurnInput, turnAcceleration * Time.deltaTime);
+        }
+        else
+        {
+            currentTurnInput = Mathf.MoveTowards(currentTurnInput, 0f, turnDecay * Time.deltaTime);
+        }
+
+        moveInput = currentTurnInput;
+    }
+
     void Update()
     {
-        if (!can_play) return;
+        if (!can_play)
+        {
+            // Lock the player on the start line until play begins
+            if (!preStartFrozen)
+            {
+                preStartFrozen = true;
+                preStartZPosition = transform.position.z;
+            }
+
+            if (rb != null)
+            {
+                Vector3 v = rb.linearVelocity;
+                v.z = 0f;
+                rb.linearVelocity = v;
+                rb.constraints = RigidbodyConstraints.FreezePositionZ;
+            }
+
+            Vector3 pos = transform.position;
+            pos.z = preStartZPosition;
+            transform.position = pos;
+            return;
+        }
+        else if (preStartFrozen)
+        {
+            // Release constraints once play starts
+            if (rb != null)
+            {
+                rb.constraints = RigidbodyConstraints.None;
+            }
+            preStartFrozen = false;
+        }
 
         
         
@@ -134,6 +201,7 @@ public class BoardController : MonoBehaviour
             }
         }
 
+        // Manual ollie tilt handled in LateUpdate so it runs after ground alignment
         TiltBoardOnJump();
 
         trickController.isGrounded = boardGroundDetect.isGrounded;
@@ -143,13 +211,7 @@ public class BoardController : MonoBehaviour
         HandleTrick();
         HandleGrind(); // This handles the grinding movement
 
-        if (Keyboard.current.aKey.isPressed) {
-            moveInput = -1;
-        } else if (Keyboard.current.dKey.isPressed) {
-            moveInput = 1;
-        } else {
-            moveInput = 0;
-        }
+        UpdateTurnInput();
 
        
 
@@ -604,23 +666,68 @@ public class BoardController : MonoBehaviour
         rb.linearVelocity = new Vector3(rb.linearVelocity.x, jumpForce, rb.linearVelocity.z);
     }
 
-   void TiltBoardOnJump() {
-        // Reset immediately if performing a trick
-        if (trickController.isPerformingTrick) {
-            boardGroundDetect.ResetNose();
+    void ResetOllieTilt()
+    {
+        currentOllieTilt = 0f;
+        if (boardGroundDetect != null)
+        {
+            boardGroundDetect.externalXTilt = 0f;
+        }
+    }
+
+    void TiltBoardOnJump() {
+        // Manual tilt: rotate the board directly via externalXTilt, do not use BoardGroundDetect helpers
+        if (rb == null || boardGroundDetect == null)
+        {
             return;
         }
 
-        // Tilt up once at the start of jump
-        if (rb.linearVelocity.y > 2.0f && !boardGroundDetect.isGrounded) {
-            boardGroundDetect.RaiseNose();
-        } 
-        // Tilt down once when velocity drops OR when we land
-        else if (rb.linearVelocity.y < 1.5f || boardGroundDetect.isGrounded) {
-            boardGroundDetect.ResetNose();
+        bool airborne = !boardGroundDetect.isGrounded && !in_grind;
+        bool performingTrick = trickController != null && trickController.isPerformingTrick;
+
+        // If tricks or grinds take over, clear ollie tilt immediately
+        if (performingTrick || in_grind || boardGroundDetect.isGrounded)
+        {
+            ResetOllieTilt();
+            return;
         }
-        
+
+        float targetTilt = 0f;
+
+        if (airborne)
+        {
+            // Full tilt while rising quickly, blend down as vertical speed drops
+            if (rb.linearVelocity.y > ollieTiltUpThreshold)
+            {
+                targetTilt = ollieMaxTiltDegrees;
+            }
+            else if (rb.linearVelocity.y > ollieLevelThreshold)
+            {
+                float t = Mathf.InverseLerp(ollieLevelThreshold, ollieTiltUpThreshold, rb.linearVelocity.y);
+                targetTilt = Mathf.Lerp(0f, ollieMaxTiltDegrees, t);
+            }
+        }
+
+        // Reduce available tilt based on current board pitch (e.g., ramps already tilting the deck)
+        float currentPitch = Mathf.DeltaAngle(0f, boardGroundDetect.transform.localEulerAngles.x);
+        float availableTilt = Mathf.Max(0f, ollieMaxTiltDegrees - Mathf.Abs(currentPitch));
+
+        // Enforce hard clamp using the remaining budget
+        targetTilt = Mathf.Clamp(targetTilt, -availableTilt, availableTilt);
+
+        // Choose speed based on whether we're tilting up or returning
+        float tiltSpeed = targetTilt > currentOllieTilt ? ollieTiltUpSpeed : ollieTiltDownSpeed;
+        float newTilt = Mathf.MoveTowards(currentOllieTilt, targetTilt, tiltSpeed * Time.deltaTime);
+        currentOllieTilt = newTilt;
+
+        // Match the old nose-up direction convention (flip sign when facing backwards)
+        bool facingBackwards = Mathf.Abs(transform.localEulerAngles.y) > 160f;
+        float signedTilt = facingBackwards ? newTilt : -newTilt;
+        float appliedTilt = Mathf.Clamp(signedTilt, -availableTilt, availableTilt);
+        boardGroundDetect.externalXTilt = appliedTilt;
     }
+
+    // TiltBoardOnJump is driven from Update; no LateUpdate override needed
 
     void PushForward() {
         if (!in_grind && boardGroundDetect.isGrounded){
@@ -629,7 +736,7 @@ public class BoardController : MonoBehaviour
         rb.linearVelocity = new Vector3(rb.linearVelocity.x, rb.linearVelocity.y, moveSpeed);
     }
 
-    void Move(int input){
+    void Move(float input){
         rb.linearVelocity = new Vector3(input * turnSpeed, rb.linearVelocity.y, moveSpeed);
     }
 
